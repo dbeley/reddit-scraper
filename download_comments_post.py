@@ -31,17 +31,19 @@ def fetch_comments(post):
     a = 0
     comments = []
     reddit = redditconnect('bot')
-    #post = "https://www.reddit.com/r/france/comments/736ghk/ama_je_suis_le_pr%C3%A9sident_de_videolan_et_le/" 
-    ide = re.search('/comments/(.*)/', post)
-    print(str(ide.group(1)))
-    submission = reddit.submission(id=ide.group(1))
+    #submission = reddit.submission(post)
+    #submission = reddit.submission(id='3gljfi')
+    submission = reddit.submission(url=str(post))
+    print("Begin fetch")
 
     columns = ["id", "Author", "Comment", "Comment_length", \
                "Date", "Score", "Subreddit", "Gilded"]
 
-
-    submission.comments.replace_more(limit=3000)
+    print(submission.fullname)
+    
+    submission.comments.replace_more(limit=None)
     for comment in submission.comments.list():
+#    for comment in submission.comments:
         a = a+1
         print("\r" + "Fetching comment " + str(a) + "…")
         comments.append(comment)
@@ -60,7 +62,7 @@ def fetch_comments(post):
         d.append({"Comment_length":len(x.body),
                 "Subreddit":x.subreddit.display_name,
                 "Author":author,
-                "Comment":x.body_html,
+                "Comment":x.body,
                 "Score":x.score,
                 "Date":x.created_utc,
                 "Gilded":x.gilded,
@@ -90,7 +92,7 @@ def export_excel(df):
 def redditconnect(bot):
     user_agent = "python:script:download_comments_post"
 
-    reddit = praw.Reddit(bot, user_agent=user_agent)
+    reddit = praw.Reddit('bot', user_agent=user_agent)
     return reddit
 
 

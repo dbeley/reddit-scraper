@@ -14,26 +14,29 @@ import time
 def main(args): 
     username = args.username
     folder = "User"
-    
-    df = fetch_comments(username)
-    
+
+    username = [x.strip() for x in username.split(',')]
+
+    df = pd.DataFrame()
+    for i in username:
+        df = fetch_comments(df, i)
     if not os.path.exists(folder):
         os.makedirs(folder)
 
     os.chdir(folder)
     export_excel(df, username)
 
-def fetch_comments(username):
+def fetch_comments(df, username):
     a = 0
     comments = []
 
-    columns = ["id", "Comment", "Comment_length", \
+    columns = ["User", "id", "Comment", "Comment_length", \
                "Date", "Score", "Subreddit", "Gilded", \
                "Link_id", "Link_title", "Link_author", "Link_url"]
 
     reddit = redditconnect('bot')
     user = reddit.redditor(username)
- 
+
     for submission in user.comments.new(limit=None):
         a = a+1
         print("\r" + "Fetching comment " + str(a) + " for user " + str(username) + "…")
@@ -48,7 +51,7 @@ def fetch_comments(username):
     for x in tqdm(comments):
         d.append({"Comment_length":len(x.body),
                 "Subreddit":x.subreddit.display_name,
-                "Comment":x.body_html,
+                "Comment":x.body,
                 "Score":x.score,
                 "Date":x.created_utc,
                 "Gilded":x.gilded,
@@ -56,29 +59,32 @@ def fetch_comments(username):
                 "Link_id":x.link_id,
                 "Link_author":x.link_author,
                 "Link_title":x.link_title,
-                "Link_url":x.link_url
+                "Link_url":x.link_url,
+                "User":str(username)
                 })
 
-    df = pd.DataFrame(d)
-    
-    df = df[columns]
-    
+    d = pd.DataFrame(d)
+
+    d = d[columns]
+
+    df = df.append(d)
+
     print("Creating pandas dataframe DONE.")
 
     return df
-    
+
 def export_excel(df, username):
-    
+
     actualtime = int(time.time())
 
-    writer = pd.ExcelWriter('comments_' + str(username) + '_' + str(actualtime) + '.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
-        
+    writer = pd.ExcelWriter('comments_' + str(actualtime) + '_' + str(username[0]) + '.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
+
     df.to_excel(writer, sheet_name='Sheet1')
-    
+
     writer.save()
-    
+
     print("Done.")
-    
+
 def redditconnect(bot):
     user_agent = "python:script:download_comments_user"
 
