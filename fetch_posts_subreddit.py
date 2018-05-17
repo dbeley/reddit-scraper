@@ -16,7 +16,6 @@ logger = logging.getLogger()
 STARTTIME = time.time()
 BUFFER = 1000
 
-
 def getPushshiftData(before, after, sub):
     url = 'https://api.pushshift.io/reddit/search/submission?&size=1000&after='+str(after)+'&subreddit='+str(sub)+'&before='+str(before)
     r = requests.get(url)
@@ -39,6 +38,8 @@ def main(args):
     before = args.before
     file = args.file
     source = args.source
+
+    reddit = redditconnect('bot')
 
     if before is None:
         before = int(STARTTIME)
@@ -63,7 +64,18 @@ def main(args):
     else:
         logger.debug("ID file detected")
         with open(file, "r") as f:
-            data = json.loads(f)
+            data = json.load(f)
+
+    # ouverture du dossier d'export
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    os.chdir(folder)
+    logger.debug("Opening subreddit folder DONE")
+
+    # export du fichier contenant la liste des ids
+    filename = "posts_{}_{}.json".format(str(sub), str(int(STARTTIME)))
+    with open(filename, "w") as f:
+        json.dump(data, f)
 
     if source is not None:
        print("ne marche pas encore")
@@ -74,17 +86,9 @@ def main(args):
        # on enlève de df
     else:
         df = pd.DataFrame()
-        df = fetch_posts(data)
+        df = fetch_posts(data, reddit)
 
     # export du dataframe
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    os.chdir(folder)
-    logger.debug("Opening subreddit folder DONE")
-
-    filename = "posts_{}_{}.json".format(str(sub), str(int(STARTTIME)))
-    with open(filename, "w") as f:
-        json.dump(data, f)
     export_excel(df, data['sub'], STARTTIME)
 
     # affichage du temps de traitement
@@ -92,7 +96,7 @@ def main(args):
     print("Runtime : %.2f seconds" % runtime)
 
 
-def fetch_posts(data):
+def fetch_posts(data, reddit):
     """
     Extrait les commentaires du subreddit subreddit entre les timestamp \
     beginningtime et endtime. Renvoie un dataframe panda
@@ -101,7 +105,6 @@ def fetch_posts(data):
                "Flair", "Domain", "Self text", "url", "permalink",
                "Author", "Author_flair_css", "Author_flair_text", "Gilded"]
 
-    reddit = redditconnect('bot')
     df = []
     for x in tqdm(data["id"]):
         submission = reddit.submission(id=str(x))
@@ -148,7 +151,7 @@ def redditconnect(bot):
     """
     user_agent = "python:script:download_posts_subreddit"
 
-    reddit = praw.Reddit('bot', user_agent=user_agent)
+    reddit = praw.Reddit(bot, user_agent=user_agent)
     logger.debug(reddit.user.me())
     return reddit
 
