@@ -2,7 +2,7 @@
 
 Various reddit scripts.
 
-Launch the script with the `-h` flag to view how to use.
+Launch a script with the `-h` flag to view how to use.
 
 - **download_comments_post.py** : Download the comments of a post.
 - **download_comments_user.py** : Download the 1000 most recents comments of a
