@@ -20,76 +20,88 @@ def getPushshiftData(before, after, sub):
     url = 'https://api.pushshift.io/reddit/search/submission?&size=1000&after='+str(after)+'&subreddit='+str(sub)+'&before='+str(before)
     r = requests.get(url)
     data = json.loads(r.text)
-    with open("youpi.json", "w") as f:
-        json.dump(r.text, f)
+    #with open("data.json", "w") as f:
+    #    json.dump(r.text, f)
     return data['data']
 
 
 def main(args):
+    # current folder
+    original_folder = os.getcwd()
+    # folder where to put extracted data
+    folder = "Subreddit"
     # list of post ID's
     post_ids = []
     # Subreddit to query
-    sub = args.subreddit
-    folder = "Subreddit"
-    # Unix timestamp of date to crawl from.
-    # 2018/04/01
-    # after = "1522618956"
-    after = args.after
-    before = args.before
+    subreddit = args.subreddit
+    # xlsx file containing already extracted data
     file = args.file
+    # json file containing post ids
     source = args.source
+    df_orig = None
 
     reddit = redditconnect('bot')
 
-    if before is None:
+    # lowest timestamp of extracted data
+    if args.after is not None:
+        after = int(args.after)
+    else:
+        after = 1100000000
+
+    # highest timestamp of extracted data
+    if args.before is not None:
+        before = int(args.before)
+    else:
         before = int(STARTTIME)
 
-    if file is None:
-        print("Begin extracting Pushshift data")
-        data = getPushshiftData(before, after, sub)
+    if file is not None:
+        df_orig = pd.read_excel(file)
+        logger.debug(list(df_orig))
+        datemax = df_orig['Date'].max()
+        # ~ 24 jours
+        if datemax >= before - 2000000:
+            datemax = before - 2000000
+        df_orig = df_orig[df_orig['Date'] <= datemax]
+        # on enlève de data tout ceux qui sont présent dans df, sauf ceux qui ont moins
+        # d'un mois
+        # on enlève de df tout ce qui va être extrait
+        after = datemax
+
+    if source is None:
+        logger.debug("Begin extracting Pushshift data")
+        data = getPushshiftData(before, after, subreddit)
 
         # Will run until all posts have been gathered
         # from the 'after' date up until todays date
         while len(data) > 0:
             for submission in data:
                 post_ids.append(submission["id"])
-            print("timestamp = " + str(data[-1]['created_utc']))
+            logger.debug("timestamp = " + str(data[-1]['created_utc']))
             # Calls getPushshiftData() with the created date of the last submission
-            data = getPushshiftData(before, data[-1]['created_utc'], sub)
-        print("Extracting Pushshift data DONE.")
+            data = getPushshiftData(before, data[-1]['created_utc'], subreddit)
+        logger.debug("Extracting Pushshift data DONE.")
 
-        data = {}
-        data['sub'] = sub
-        data['id'] = post_ids
+        data = post_ids
+
     else:
         logger.debug("ID file detected")
-        with open(file, "r") as f:
+        with open(source, "r") as f:
             data = json.load(f)
 
-    # ouverture du dossier d'export
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    os.chdir(folder)
-    logger.debug("Opening subreddit folder DONE")
+    # export du fichier json data
+    filename = "posts_{}_{}.json".format(str(subreddit), str(int(before)))
+    export(data, folder, original_folder, filename, "json")
 
-    # export du fichier contenant la liste des ids
-    filename = "posts_{}_{}.json".format(str(sub), str(int(STARTTIME)))
-    with open(filename, "w") as f:
-        json.dump(data, f)
+    df = pd.DataFrame()
+    df = fetch_posts(data, reddit)
 
-    if source is not None:
-       print("ne marche pas encore")
-       exit
-       # on charge df
-       # on enlève de data tout ceux qui sont présent dans df, sauf ceux qui ont moins
-       # d'un mois
-       # on enlève de df
-    else:
-        df = pd.DataFrame()
-        df = fetch_posts(data, reddit)
+    if df_orig is not None:
+        df_orig = df_orig[~df_orig['ID'].isin(df['ID'])]
+        df = df_orig.append(df)
 
-    # export du dataframe
-    export_excel(df, data['sub'], STARTTIME)
+    # export du dataframe en xlsx
+    filename = "posts_{}_{}.xlsx".format(str(subreddit), str(int(before)))
+    export(df, folder, original_folder, filename, "xlsx")
 
     # affichage du temps de traitement
     runtime = time.time() - STARTTIME
@@ -101,30 +113,41 @@ def fetch_posts(data, reddit):
     Extrait les commentaires du subreddit subreddit entre les timestamp \
     beginningtime et endtime. Renvoie un dataframe panda
     """
-    columns = ["id", "Name", "Date", "Score", "Ratio", "Nbr_comments",
-               "Flair", "Domain", "Self text", "url", "permalink",
-               "Author", "Author_flair_css", "Author_flair_text", "Gilded"]
-
+    columns = ["ID", "Nom", "Date", "Score", "Ratio", "Commentaires", "Flair",
+               "Domaine", "Texte", "URL", "Permalien", "Auteur",
+               "CSS Flair Auteur", "Texte Flair Auteur", "Downvotes",
+               "Upvotes", "Doré", "Peut dorer", "Caché", "Archivé",
+               "Peut crossposter"]
     df = []
-    for x in tqdm(data["id"]):
-        submission = reddit.submission(id=str(x))
-        df.append({"Score": submission.score,
-                   "Author": str(submission.author),
-                   "Author_flair_css": str(submission.author_flair_css_class),
-                   "Author_flair_text": str(submission.author_flair_text),
-                   "Ratio": submission.upvote_ratio,
-                   "id": submission.name,
-                   "permalink": str("https://reddit.com" +
-                                    submission.permalink),
-                   "Name": submission.title,
-                   "url": submission.url,
-                   "Nbr_comments": submission.num_comments,
-                   "Date": submission.created_utc,
-                   "Flair": str(submission.link_flair_text),
-                   "Self text": str(submission.selftext),
-                   "Domain": submission.domain,
-                   "Gilded": submission.gilded
-                   })
+    for x in tqdm(data):
+        try:
+            submission = reddit.submission(id=str(x))
+            df.append({"Score": submission.score,
+                       "Auteur": str(submission.author),
+                       "CSS Flair Auteur":
+                       str(submission.author_flair_css_class),
+                       "Texte Flair Auteur": str(submission.author_flair_text),
+                       "Ratio": submission.upvote_ratio,
+                       "ID": submission.name,
+                       "Permalien": str("https://reddit.com" +
+                                        submission.permalink),
+                       "Nom": submission.title,
+                       "URL": submission.url,
+                       "Commentaires": submission.num_comments,
+                       "Date": submission.created_utc,
+                       "Flair": str(submission.link_flair_text),
+                       "Texte": str(submission.selftext),
+                       "Domaine": submission.domain,
+                       "Doré": submission.gilded,
+                       "Downvotes": submission.downs,
+                       "Upvotes": submission.ups,
+                       "Caché": submission.hidden,
+                       "Archivé": submission.archived,
+                       "Peut dorer": submission.can_gild,
+                       "Peut crossposter": submission.is_crosspostable
+                       })
+        except Exception as e:
+            print("Error : " + str(e))
     logger.debug("Fetching posts DONE.")
     logger.debug("Creating pandas dataframe…")
     df = pd.DataFrame(df)
@@ -132,17 +155,30 @@ def fetch_posts(data, reddit):
     return df
 
 
-def export_excel(df, subreddit, endtime):
+def export(data, folder, original_folder, filename, type):
     """
-    Fonction d'export vers excel.
+    Fonction d'export
     """
-    filename = "posts_{}_{}.xlsx".format(str(subreddit), str(int(endtime)))
-    writer = pd.ExcelWriter(filename, engine='xlsxwriter',
-                            options={'strings_to_urls': False})
-    logger.debug("df.to_excel")
-    df.to_excel(writer, sheet_name='Sheet1', index=False)
-    logger.debug("writer.save")
-    writer.save()
+
+    # ouverture du dossier d'export
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    os.chdir(folder)
+    logger.debug("Opening subreddit folder DONE")
+
+    if type == "json":
+        # export json
+        with open(filename, "w") as f:
+            json.dump(data, f)
+    elif type == "xlsx":
+        writer = pd.ExcelWriter(filename, engine='xlsxwriter',
+                                options={'strings_to_urls': False})
+        logger.debug("df.to_excel")
+        data.to_excel(writer, sheet_name='Sheet1', index=False)
+        logger.debug("writer.save")
+        writer.save()
+
+    os.chdir(original_folder)
 
 
 def redditconnect(bot):
@@ -158,21 +194,13 @@ def redditconnect(bot):
 
 def parse_args():
 
-    parser = argparse.ArgumentParser(description='Download all the posts of a \
-            specific subreddit')
-    parser.add_argument('-a', '--after', type=str, help='The min unixstamp to \
-            download', default="1115419038")
-    parser.add_argument('-b', '--before', type=str, help='The max unixstamp to\
-             download')
-    parser.add_argument('--source', type=str, help='The name of the file \
-            containing posts')
-    parser.add_argument('-f', '--file', type=str, help='The name of the file \
-            containing posts id')
-    parser.add_argument('-s', '--subreddit', type=str, help='The subreddit to \
-            download posts from. Default : /r/france', default="france")
-    parser.add_argument('--debug', help="Affiche les informations de \
-            déboguage", action="store_const", dest="loglevel",
-                        const=logging.DEBUG, default=logging.WARNING)
+    parser = argparse.ArgumentParser(description='Download all the posts of a specific subreddit')
+    parser.add_argument('-a', '--after', type=str, help='The min unixstamp to download')
+    parser.add_argument('-b', '--before', type=str, help='The max unixstamp to download')
+    parser.add_argument('--source', type=str, help='The name of the json file containing posts ids')
+    parser.add_argument('--file', type=str, help='The name of the xlsx file containing posts already extracted')
+    parser.add_argument('-s', '--subreddit', type=str, help='The subreddit to download posts from. Default : /r/france', default="france")
+    parser.add_argument('--debug', help="Affiche les informations de déboguage", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)
