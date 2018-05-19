@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Download all the posts from a subreddit and export it in xlsx.
 """
@@ -115,9 +116,8 @@ def fetch_posts(data, reddit):
     """
     columns = ["ID", "Nom", "Date", "Score", "Ratio", "Commentaires", "Flair",
                "Domaine", "Texte", "URL", "Permalien", "Auteur",
-               "CSS Flair Auteur", "Texte Flair Auteur", "Downvotes",
-               "Upvotes", "Doré", "Peut dorer", "Caché", "Archivé",
-               "Peut crossposter"]
+               "CSS Flair Auteur", "Texte Flair Auteur", "Doré", "Peut dorer",
+               "Caché", "Archivé", "Peut crossposter"]
     df = []
     for x in tqdm(data):
         try:
@@ -139,8 +139,6 @@ def fetch_posts(data, reddit):
                        "Texte": str(submission.selftext),
                        "Domaine": submission.domain,
                        "Doré": submission.gilded,
-                       "Downvotes": submission.downs,
-                       "Upvotes": submission.ups,
                        "Caché": submission.hidden,
                        "Archivé": submission.archived,
                        "Peut dorer": submission.can_gild,

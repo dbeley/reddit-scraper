@@ -1,8 +1,7 @@
+#!/usr/bin/env python
 """
 Download all the posts from a subreddit and export it in xlsx.
 """
-
-#! /usr/bin/env python
 
 import argparse
 import logging

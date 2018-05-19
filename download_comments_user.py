@@ -1,8 +1,7 @@
+#!/usr/bin/env python
 """
 Download comments from a user and export it in xlsx.
 """
-
-#! /usr/bin/env python
 
 import praw
 import pandas as pd

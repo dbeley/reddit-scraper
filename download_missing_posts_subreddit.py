@@ -1,8 +1,7 @@
+#!/usr/bin/env python
 """
 Download missing posts from a xlsx file containing subreddit posts.
 """
-
-#! /usr/bin/env python
 
 import time
 import argparse
