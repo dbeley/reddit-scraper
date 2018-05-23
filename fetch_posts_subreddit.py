@@ -150,6 +150,7 @@ def fetch_posts(data, reddit):
     logger.debug("Creating pandas dataframe…")
     df = pd.DataFrame(df)
     df = df[columns]
+    df['Date'] = pd.to_datetime(df['Date'], unit='s')
     return df
 
 
