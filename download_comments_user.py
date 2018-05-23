@@ -22,6 +22,8 @@ def main(args):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+    df['Date'] = pd.to_datetime(df['Date'], unit='s')
+
     os.chdir(folder)
     export_excel(df, username)
 

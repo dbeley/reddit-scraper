@@ -76,6 +76,7 @@ def fetch_comments(post, reddit):
     df = pd.DataFrame(d)
 
     df = df[columns]
+    df['Date'] = pd.to_datetime(df['Date'], unit='s')
 
     print("Creating pandas dataframe DONE.")
 
