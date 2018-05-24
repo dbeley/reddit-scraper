@@ -92,6 +92,11 @@ def fetch_comments(post, reddit):
 
     df = pd.DataFrame(d)
 
+<<<<<<< HEAD
+=======
+    df = df[columns]
+    df['Date'] = pd.to_datetime(df['Date'], unit='s')
+>>>>>>> 9c931ff... changement du format de la date
 
     logger.debug("Creating pandas dataframe DONE.")
 
