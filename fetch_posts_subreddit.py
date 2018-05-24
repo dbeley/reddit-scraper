@@ -15,14 +15,14 @@ from tqdm import tqdm
 
 logger = logging.getLogger()
 STARTTIME = time.time()
-BUFFER = 1000
+
 
 def getPushshiftData(before, after, sub):
     url = 'https://api.pushshift.io/reddit/search/submission?&size=1000&after='+str(after)+'&subreddit='+str(sub)+'&before='+str(before)
     r = requests.get(url)
     data = json.loads(r.text)
-    #with open("data.json", "w") as f:
-    #    json.dump(r.text, f)
+    # with open("data.json", "w") as f:
+    #     json.dump(r.text, f)
     return data['data']
 
 
@@ -149,8 +149,8 @@ def fetch_posts(data, reddit):
     logger.debug("Fetching posts DONE.")
     logger.debug("Creating pandas dataframe…")
     df = pd.DataFrame(df)
-    df = df[columns]
     df['Date'] = pd.to_datetime(df['Date'], unit='s')
+    df = df[columns]
     return df
 
 

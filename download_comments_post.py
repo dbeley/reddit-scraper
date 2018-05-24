@@ -10,8 +10,11 @@ from tqdm import tqdm
 import os
 import time
 import sys
-import re
 import json
+import logging
+
+logger = logging.getLogger()
+STARTTIME = time.time()
 
 
 def main(args):
@@ -22,7 +25,20 @@ def main(args):
     post = sys.argv[1]
     file = args.file
 
-    df = fetch_comments(post, reddit)
+    if file is not None:
+        with open(file, "r") as f:
+            data = json.load(f)
+        for i in tqdm(data):
+            df = pd.DataFrame()
+            df = df.append(fetch_comments(i, reddit))
+    else:
+        df = fetch_comments(post, reddit)
+
+    columns = ["ID", "Auteur", "Commentaire", "Longueur",
+               "Date", "Score", "Subreddit", "Doré", "Parent", "Flair"]
+    df = df[columns]
+
+    df['Date'] = pd.to_datetime(df['Date'], unit='s')
 
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -30,32 +46,33 @@ def main(args):
     os.chdir(folder)
     export_excel(df)
 
+    # affichage du temps de traitement
+    runtime = time.time() - STARTTIME
+    print("Runtime : %.2f seconds" % runtime)
+
 
 def fetch_comments(post, reddit):
     a = 0
     comments = []
     # submission = reddit.submission(post)
     # submission = reddit.submission(id='3gljfi')
-    submission = reddit.submission(url=str(post))
-    print("Begin fetch")
+    submission = reddit.submission(str(post))
+    logger.debug("Begin fetch")
 
-    print(submission.fullname)
+    logger.debug(submission.fullname)
 
     submission.comments.replace_more(limit=None)
     for comment in submission.comments.list():
     # for comment in submission.comments:
         a = a+1
-        print("\r" + "Fetching comment " + str(a) + "…")
+        logger.debug("\r" + "Fetching comment " + str(a) + "…")
         comments.append(comment)
 
-    print("Fetching comments DONE.")
+    logger.debug("Fetching comments DONE.")
 
-    print("Creating pandas dataframe...")
+    logger.debug("Creating pandas dataframe...")
 
     d = []
-    columns = ["ID", "Auteur", "Commentaire", "Longueur",
-               "Date", "Score", "Subreddit", "Doré", "Parent", "Flair"]
-
     for x in comments:
         if not x.author:
             author = '[deleted]'
@@ -75,10 +92,8 @@ def fetch_comments(post, reddit):
 
     df = pd.DataFrame(d)
 
-    df = df[columns]
-    df['Date'] = pd.to_datetime(df['Date'], unit='s')
 
-    print("Creating pandas dataframe DONE.")
+    logger.debug("Creating pandas dataframe DONE.")
 
     return df
 
@@ -93,7 +108,7 @@ def export_excel(df):
 
     writer.save()
 
-    print("Done.")
+    logger.debug("Done.")
 
 
 def redditconnect(bot):
@@ -106,10 +121,12 @@ def redditconnect(bot):
 def parse_args():
 
     parser = argparse.ArgumentParser(description="Download comments of a post or a set of post")
-    parser.add_argument('-f', '--file', type=str, help='file containing set of ids or links (one per line')
+    parser.add_argument('-f', '--file', type=str, help='file of JSON fil containing set of ids or links (one per line')
+    parser.add_argument('--debug', help="Affiche les informations de déboguage", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
 
     args = parser.parse_args()
 
+    logging.basicConfig(level=args.loglevel)
     return args
 
 
