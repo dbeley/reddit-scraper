@@ -10,6 +10,7 @@ import time
 import json
 import requests
 import pandas as pd
+import numpy as np
 import praw
 from tqdm import tqdm
 
@@ -60,16 +61,20 @@ def main(args):
         logger.debug(list(df_orig))
         datemax = df_orig['Date'].max()
         # ~ 24 jours
-        if datemax >= before - 2000000:
-            datemax = before - 2000000
+        moins24j = before - 2000000
+        moins24j = pd.to_datetime(moins24j, unit='s')
+        if datemax >= moins24j:
+            datemax = moins24j
         df_orig = df_orig[df_orig['Date'] <= datemax]
         # on enlève de data tout ceux qui sont présent dans df, sauf ceux qui ont moins
         # d'un mois
         # on enlève de df tout ce qui va être extrait
-        after = datemax
+        after = int(datemax.timestamp())
 
     if source is None:
         logger.debug("Begin extracting Pushshift data")
+        logger.debug("before: {0}, after: {1}, subreddit:{2}".format(str(before), str(after),
+                    str(subreddit)))
         data = getPushshiftData(before, after, subreddit)
 
         # Will run until all posts have been gathered
