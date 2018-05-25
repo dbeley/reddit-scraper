@@ -21,8 +21,8 @@ def getPushshiftData(before, after, sub):
     url = 'https://api.pushshift.io/reddit/search/submission?&size=1000&after='+str(after)+'&subreddit='+str(sub)+'&before='+str(before)
     r = requests.get(url)
     data = json.loads(r.text)
-    # with open("data.json", "w") as f:
-    #     json.dump(r.text, f)
+    # with open('export_pushshift.json', 'w') as f:
+    #     json.dump(data['data'], f)
     return data['data']
 
 

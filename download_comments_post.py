@@ -24,12 +24,17 @@ def main(args):
 
     post = sys.argv[1]
     file = args.file
+    source = args.source
 
     if file is not None:
-        with open(file, "r") as f:
+        df_orig = pd.read_excel(file)
+        logger.debug(list(df_orig))
+
+    df = pd.DataFrame()
+    if source is not None:
+        with open(source, "r") as f:
             data = json.load(f)
         for i in tqdm(data):
-            df = pd.DataFrame()
             df = df.append(fetch_comments(i, reddit))
     else:
         df = fetch_comments(post, reddit)
@@ -39,6 +44,10 @@ def main(args):
     df = df[columns]
 
     df['Date'] = pd.to_datetime(df['Date'], unit='s')
+
+    if file is not None:
+        df_orig = df_orig[~df_orig['ID'].isin(df['ID'])]
+        df = df_orig.append(df)
 
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -98,6 +107,9 @@ def fetch_comments(post, reddit):
 
 
 def export_excel(df):
+    """
+    Fonction d'export
+    """
 
     actualtime = int(time.time())
 
@@ -111,6 +123,9 @@ def export_excel(df):
 
 
 def redditconnect(bot):
+    """
+    Fonction de connexion à reddit
+    """
     user_agent = "python:script:download_comments_post"
 
     reddit = praw.Reddit('bot', user_agent=user_agent)
@@ -119,8 +134,9 @@ def redditconnect(bot):
 
 def parse_args():
 
-    parser = argparse.ArgumentParser(description="Download comments of a post or a set of post")
-    parser.add_argument('-f', '--file', type=str, help='file of JSON fil containing set of ids or links (one per line')
+    parser = argparse.ArgumentParser(description="Download comments of a post  or a set of posts")
+    parser.add_argument('--source', type=str, help='The name of the json file containing posts ids')
+    parser.add_argument('--file', type=str, help='The name of the xlsx file containing comments already extracted')
     parser.add_argument('--debug', help="Affiche les informations de déboguage", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
 
     args = parser.parse_args()
