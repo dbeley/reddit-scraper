@@ -124,7 +124,7 @@ def fetch_posts(data, reddit):
                "CSS Flair Auteur", "Texte Flair Auteur", "Doré", "Peut dorer",
                "Caché", "Archivé", "Peut crossposter"]
     df = []
-    for x in tqdm(data):
+    for x in tqdm(data, dynamic_ncols=True):
         try:
             submission = reddit.submission(id=str(x))
             df.append({"Score": submission.score,

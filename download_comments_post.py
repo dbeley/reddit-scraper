@@ -34,7 +34,7 @@ def main(args):
     if source is not None:
         with open(source, "r") as f:
             data = json.load(f)
-        for i in tqdm(data):
+        for i in tqdm(data, dynamic_ncols=True):
             df = df.append(fetch_comments(i, reddit))
     else:
         df = fetch_comments(post, reddit)

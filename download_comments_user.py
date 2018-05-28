@@ -49,7 +49,7 @@ def fetch_comments(df, username):
 
     d = []
 
-    for x in tqdm(comments):
+    for x in tqdm(comments, dynamic_ncols=True):
         d.append({"Comment_length":len(x.body),
                 "Subreddit":x.subreddit.display_name,
                 "Comment":x.body,
