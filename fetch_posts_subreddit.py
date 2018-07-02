@@ -28,6 +28,7 @@ def getPushshiftData(before, after, sub):
 
 
 def main(args):
+    logger.debug("Démarrage du script")
     # current folder
     original_folder = os.getcwd()
     # folder where to put extracted data
@@ -42,6 +43,7 @@ def main(args):
     source = args.source
     df_orig = None
 
+    logger.debug("Connexion à l'API reddit")
     reddit = redditconnect('bot')
 
     # lowest timestamp of extracted data
@@ -54,20 +56,25 @@ def main(args):
     if args.before is not None:
         before = int(args.before)
     else:
-        before = int(STARTTIME)
+        before = int(STARTTIME) - 600000
 
     if file is not None:
+        logger.debug("Argument \'file\' détecté")
+        logger.debug("Chargement df_orig")
         df_orig = pd.read_excel(file)
+        logger.debug("#### LIST ####")
         logger.debug(list(df_orig))
-        datemax = df_orig['Date'].max()
-        # ~ 24 jours
-        moins24j = before - 2000000
-        moins24j = pd.to_datetime(moins24j, unit='s')
-        if datemax >= moins24j:
-            datemax = moins24j
+        logger.debug("#### INFO ####")
+        logger.debug(df_orig.info())
+        datemax = pd.to_numeric(df_orig['Date']).max()
+        #datemax = df_orig['Date'].astype(int).max()
+        datemax = pd.to_datetime(datemax, unit='s')
+        # ~ 7 jours
+        moins7j = before - 600000
+        moins7j = pd.to_datetime(moins7j, unit='s')
+        if datemax >= moins7j:
+            datemax = moins7j
         df_orig = df_orig[df_orig['Date'] <= datemax]
-        # on enlève de data tout ceux qui sont présent dans df, sauf ceux qui ont moins
-        # d'un mois
         # on enlève de df tout ce qui va être extrait
         after = int(datemax.timestamp())
 
