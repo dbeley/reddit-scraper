@@ -65,9 +65,10 @@ def main(args):
         logger.debug("#### LIST ####")
         logger.debug(list(df_orig))
         logger.debug("#### INFO ####")
-        logger.debug(df_orig.info())
-        datemax = pd.to_numeric(df_orig['Date']).max()
+        datemax = df_orig['Date'].max()
+        #datemax = pd.to_numeric(df_orig['Date']).max()
         #datemax = df_orig['Date'].astype(int).max()
+        logger.debug("datemax = " + str(datemax))
         datemax = pd.to_datetime(datemax, unit='s')
         # ~ 7 jours
         moins7j = before - 600000

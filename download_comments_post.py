@@ -91,12 +91,13 @@ def fetch_comments(post, reddit):
                   "Subreddit": x.subreddit.display_name,
                   "Auteur": author,
                   "Commentaire": x.body,
+                  "ID Commentaire": x.id,
                   "Score": x.score,
                   "Date": x.created_utc,
                   "Doré": x.gilded,
-                  "ID": x.id,
                   "Parent": x.parent_id,
-                  "Flair": x.author_flair_text
+                  "Flair": x.author_flair_text,
+                  "ID Post": str(post)
                   })
 
     df = pd.DataFrame(d)
