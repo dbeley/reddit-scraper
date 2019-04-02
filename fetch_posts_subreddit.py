@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import praw
 from tqdm import tqdm
+import xlsxwriter
 
 logger = logging.getLogger()
 STARTTIME = time.time()
