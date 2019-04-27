@@ -5,7 +5,7 @@ Subreddit/
 User/
 Bot*/
 *.json
-*.txt
 Scripts/
 tags
 analyse_r_france/
+venv/
