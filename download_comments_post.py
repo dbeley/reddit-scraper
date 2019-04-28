@@ -39,8 +39,17 @@ def main(args):
     else:
         df = fetch_comments(post, reddit)
 
-    columns = ["ID", "Auteur", "Commentaire", "Longueur",
-               "Date", "Score", "Subreddit", "Doré", "Parent", "Flair"]
+    columns = ["ID Commentaire",
+               "Commentaire",
+               "Auteur",
+               "Subreddit",
+               "Longueur",
+               "Score",
+               "Date",
+               "Doré",
+               "Parent",
+               "Flair",
+               "ID Post"]
     df = df[columns]
 
     df['Date'] = pd.to_datetime(df['Date'], unit='s')
@@ -63,8 +72,6 @@ def main(args):
 def fetch_comments(post, reddit):
     a = 0
     comments = []
-    # submission = reddit.submission(post)
-    # submission = reddit.submission(id='3gljfi')
     submission = reddit.submission(str(post))
     logger.debug("Begin fetch")
 
