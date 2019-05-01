@@ -76,6 +76,7 @@ def fetch_comments(post, reddit):
     logger.debug("Begin fetch")
 
     logger.debug(submission.fullname)
+    post_title = submission.title
 
     submission.comments.replace_more(limit=None)
     for comment in submission.comments.list():
@@ -104,7 +105,8 @@ def fetch_comments(post, reddit):
                   "Doré": x.gilded,
                   "Parent": x.parent_id,
                   "Flair": x.author_flair_text,
-                  "ID Post": str(post)
+                  "ID Post": str(post),
+                  "Titre post": post_title
                   })
 
     df = pd.DataFrame(d)
