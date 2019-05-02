@@ -8,4 +8,4 @@ Bot*/
 Scripts/
 tags
 analyse_r_france/
-venv/
+.venv/
