@@ -21,3 +21,14 @@ password=password
 username=username
 ```
 
+## Installation
+
+```
+pipenv install
+```
+
+## Usage
+
+```
+pipenv run python fetch_posts_subreddit.py -h
+```
