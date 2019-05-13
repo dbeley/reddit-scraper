@@ -4,96 +4,115 @@ Download posts from a user and export it in xlsx.
 """
 
 import praw
-import pandas as pd
 import argparse
-from tqdm import tqdm
 import os
 import time
+import logging
+import pandas as pd
+from tqdm import tqdm
 
-def main(args): 
+logger = logging.getLogger()
+temps_debut = time.time()
+
+
+def main(args):
     username = args.username
     folder = "User"
-
-    username = [x.strip() for x in username.split(',')]
-
-    df = pd.DataFrame()
-    for i in username:
-        df = fetch_posts(df, i)
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    df['Date'] = pd.to_datetime(df['Date'], unit='s')
+    username = [x.strip() for x in username.split(',')]
 
-    os.chdir(folder)
-    export_excel(df, username)
+    for i in username:
+        logger.info(f"Fetching posts for user {i}")
+        try:
+            df = fetch_posts(i)
 
-def fetch_posts(df, username):
-    a = 0
+            df['Date'] = pd.to_datetime(df['Date'], unit='s')
+            export_excel(df, i, folder)
+        except Exception as e:
+            logger.error(e)
+    logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
+
+
+def fetch_posts(username):
     posts = []
 
-    columns = ["ID", "Nom", "Date", "Score", "Ratio", "Commentaires", "Flair",
-               "Domaine", "Texte", "URL", "Permalien", "Auteur",
-               "CSS Flair Auteur", "Texte Flair Auteur", "Doré", "Peut dorer",
-               "Caché", "Archivé", "Peut crossposter"]
+    columns = ["ID",
+               "Title",
+               "Date",
+               "Score",
+               "Ratio",
+               "Comments",
+               "Flair",
+               "Domain",
+               "Text",
+               "URL",
+               "Permalink",
+               "Author",
+               "Author CSS Flair",
+               "Author Text Flair",
+               "Gilded",
+               "Can Gild",
+               "Hidden",
+               "Archived",
+               "Can Crosspost"]
 
     reddit = redditconnect('bot')
     user = reddit.redditor(username)
 
-    for a, submission in enumerate(user.submissions.new(limit=None), 1):
-        print("\r" + "Fetching post " + str(a) + " for user " + str(username) + "…")
+    for index, submission in enumerate(user.submissions.new(limit=None), 1):
+        logger.debug(f"\rFetching post {index} for user {username}…")
         posts.append(submission)
 
-    print("Fetching posts DONE.")
+    logger.debug("Fetching posts DONE.")
 
-    print("Creating pandas dataframe...")
+    logger.debug("Creating pandas dataframe...")
 
     d = []
 
     for submission in tqdm(posts, dynamic_ncols=True):
         d.append({"Score": submission.score,
-                  "Auteur": str(submission.author),
-                  "CSS Flair Auteur":
+                  "Author": str(submission.author),
+                  "Author CSS Flair":
                   str(submission.author_flair_css_class),
-                  "Texte Flair Auteur": str(submission.author_flair_text),
+                  "Author Text Flair": str(submission.author_flair_text),
                   "Ratio": submission.upvote_ratio,
                   "ID": submission.name,
-                  "Permalien": str("https://reddit.com" +
-                                   submission.permalink),
-                  "Nom": submission.title,
+                  "Permalink": f"https://reddit.com{submission.permalink}",
+                  "Title": submission.title,
                   "URL": submission.url,
-                  "Commentaires": submission.num_comments,
+                  "Comments": submission.num_comments,
                   "Date": submission.created_utc,
                   "Flair": str(submission.link_flair_text),
-                  "Texte": str(submission.selftext),
-                  "Domaine": submission.domain,
-                  "Doré": submission.gilded,
-                  "Caché": submission.hidden,
-                  "Archivé": submission.archived,
-                  "Peut dorer": submission.can_gild,
-                  "Peut crossposter": submission.is_crosspostable
+                  "Text": str(submission.selftext),
+                  "Domain": submission.domain,
+                  "Gilded": submission.gilded,
+                  "Hidden": submission.hidden,
+                  "Archived": submission.archived,
+                  "Can Gild": submission.can_gild,
+                  "Can Crosspost": submission.is_crosspostable
                   })
 
-    d = pd.DataFrame(d)
+    df = pd.DataFrame(d)
 
-    d = d[columns]
+    df = df[columns]
 
-    df = df.append(d)
-
-    print("Creating pandas dataframe DONE.")
+    logger.debug("Creating pandas dataframe DONE.")
 
     return df
 
-def export_excel(df, username):
+
+def export_excel(df, username, folder):
 
     actualtime = int(time.time())
 
-    writer = pd.ExcelWriter('posts_' + str(actualtime) + '_' + str(username[0]) + '.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
+    writer = pd.ExcelWriter(f'{folder}/posts_{actualtime}_{username}.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
 
     df.to_excel(writer, sheet_name='Sheet1')
 
     writer.save()
 
-    print("Done.")
 
 def redditconnect(bot):
     user_agent = "python:script:download_posts_user"
@@ -104,13 +123,13 @@ def redditconnect(bot):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Download all the posts of a specific user')
+    parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.INFO)
     parser.add_argument('-u', '--username', type=str, help='The user to download posts from. ', default='c154c7a68e0e29d9614e')
-
     args = parser.parse_args()
 
+    logging.basicConfig(level=args.loglevel)
     return args
+
 
 if __name__ == '__main__':
     main(parse_args())
-    
-

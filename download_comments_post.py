@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Download comment from a post and export it in xlsx.
+Download comment from posts and export it to xlsx.
 """
 
 import praw
@@ -9,7 +9,6 @@ import argparse
 from tqdm import tqdm
 import os
 import time
-import sys
 import json
 import logging
 
@@ -22,7 +21,8 @@ def main(args):
 
     folder = "Comments"
 
-    post = sys.argv[1]
+    ids = args.id
+    urls = args.url
     file = args.file
     source = args.source
 
@@ -34,24 +34,42 @@ def main(args):
     if source is not None:
         with open(source, "r") as f:
             data = json.load(f)
-        for i in tqdm(data, dynamic_ncols=True):
-            df = df.append(fetch_comments(i, reddit))
+        for id in tqdm(data, dynamic_ncols=True):
+            logger.info(f"Extracting comments for id {id}")
+            df = df.append(fetch_comments(reddit, id=id))
+    elif ids is not None:
+        ids = [x.strip() for x in ids.split(',')]
+        for id in tqdm(ids, dynamic_ncols=True):
+            logger.info(f"Extracting comments for id {id}")
+            df = df.append(fetch_comments(reddit, id=id))
+    elif urls is not None:
+        urls = [x.strip() for x in urls.split(',')]
+        for url in tqdm(urls, dynamic_ncols=True):
+            logger.info(f"Extracting comments for url {url}")
+            df = df.append(fetch_comments(reddit, url=url))
     else:
-        df = fetch_comments(post, reddit)
+        logger.error("Error in arguments. Use --source,-i/--id or -u/--url")
+        exit()
 
-    columns = ["ID Commentaire",
-               "Commentaire",
-               "Auteur",
+    columns = ["ID",
+               "Comment",
+               "Author",
                "Subreddit",
-               "Longueur",
+               "Permalink",
+               "Length",
                "Score",
                "Date",
-               "Doré",
+               "Gilded",
                "Parent",
                "Flair",
-               "ID Post"]
-    df = df[columns]
+               "Post ID",
+               "Post Permalink",
+               "Post Title",
+               "Post URL",
+               "Post Author"
+               ]
 
+    df = df[columns]
     df['Date'] = pd.to_datetime(df['Date'], unit='s')
 
     if file is not None:
@@ -61,28 +79,28 @@ def main(args):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    os.chdir(folder)
-    export_excel(df)
+    export_excel(df, folder)
 
-    # affichage du temps de traitement
     runtime = time.time() - STARTTIME
-    print("Runtime : %.2f seconds" % runtime)
+    logger.info("Runtime : %.2f seconds" % runtime)
 
 
-def fetch_comments(post, reddit):
-    a = 0
+def fetch_comments(reddit, url=None, id=None):
     comments = []
-    submission = reddit.submission(str(post))
-    logger.debug("Begin fetch")
+    if id:
+        submission = reddit.submission(id=id)
+    elif url:
+        submission = reddit.submission(url=url)
+    else:
+        logger.error("Error in fetch_comments")
+        exit()
 
+    logger.debug("Begin fetch")
     logger.debug(submission.fullname)
-    post_title = submission.title
 
     submission.comments.replace_more(limit=None)
-    for comment in submission.comments.list():
-    # for comment in submission.comments:
-        a = a+1
-        logger.debug("\r" + "Fetching comment " + str(a) + "…")
+    for index, comment in enumerate(submission.comments.list(), 1):
+        logger.debug(f"\rFetching comment {index} …")
         comments.append(comment)
 
     logger.debug("Fetching comments DONE.")
@@ -95,18 +113,22 @@ def fetch_comments(post, reddit):
             author = '[deleted]'
         else:
             author = x.author.name
-        d.append({"Longueur": len(x.body),
+        d.append({"Length": len(x.body),
                   "Subreddit": x.subreddit.display_name,
-                  "Auteur": author,
-                  "Commentaire": x.body,
-                  "ID Commentaire": x.id,
+                  "Author": author,
+                  "Comment": x.body,
+                  "ID": x.id,
                   "Score": x.score,
                   "Date": x.created_utc,
-                  "Doré": x.gilded,
+                  "Gilded": x.gilded,
                   "Parent": x.parent_id,
                   "Flair": x.author_flair_text,
-                  "ID Post": str(post),
-                  "Titre post": post_title
+                  "Post ID": submission.id,
+                  "Post Permalink": f"https://reddit.com{submission.permalink}",
+                  "Post Title": submission.title,
+                  "Post Author": x.link_author,
+                  "Post URL": submission.url,
+                  "Permalink": f"https://reddit.com{x.permalink}"
                   })
 
     df = pd.DataFrame(d)
@@ -116,14 +138,14 @@ def fetch_comments(post, reddit):
     return df
 
 
-def export_excel(df):
+def export_excel(df, folder):
     """
     Fonction d'export
     """
 
     actualtime = int(time.time())
 
-    writer = pd.ExcelWriter('comments_' + str(actualtime) + '.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
+    writer = pd.ExcelWriter(f'{folder}/comments_{actualtime}.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
 
     df.to_excel(writer, sheet_name='Sheet1')
 
@@ -143,11 +165,12 @@ def redditconnect(bot):
 
 
 def parse_args():
-
     parser = argparse.ArgumentParser(description="Download comments of a post  or a set of posts")
+    parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
+    parser.add_argument('-i', '--id', type=str, help='IDs of the posts to extract (separated by commas)')
+    parser.add_argument('-u', '--url', type=str, help='URLs of the posts to extract (separated by commas)')
     parser.add_argument('--source', type=str, help='The name of the json file containing posts ids')
     parser.add_argument('--file', type=str, help='The name of the xlsx file containing comments already extracted')
-    parser.add_argument('--debug', help="Affiche les informations de déboguage", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
 
     args = parser.parse_args()
 

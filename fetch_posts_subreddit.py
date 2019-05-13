@@ -10,7 +10,6 @@ import time
 import json
 import requests
 import pandas as pd
-import numpy as np
 import praw
 from tqdm import tqdm
 import xlsxwriter
@@ -67,8 +66,6 @@ def main(args):
         logger.debug(list(df_orig))
         logger.debug("#### INFO ####")
         datemax = df_orig['Date'].max()
-        #datemax = pd.to_numeric(df_orig['Date']).max()
-        #datemax = df_orig['Date'].astype(int).max()
         logger.debug("datemax = " + str(datemax))
         datemax = pd.to_datetime(datemax, unit='s')
         # ~ 7 jours
@@ -103,22 +100,20 @@ def main(args):
         with open(source, "r") as f:
             data = json.load(f)
 
-    # export du fichier json data
     filename = "posts_{}_{}.json".format(str(subreddit), str(int(before)))
     export(data, folder, original_folder, filename, "json")
 
     df = pd.DataFrame()
     df = fetch_posts(data, reddit)
 
+    # create the complete dataframe if df_orig exists
     if df_orig is not None:
         df_orig = df_orig[~df_orig['ID'].isin(df['ID'])]
         df = df_orig.append(df)
 
-    # export du dataframe en xlsx
     filename = "posts_{}_{}.xlsx".format(str(subreddit), str(int(before)))
     export(df, folder, original_folder, filename, "xlsx")
 
-    # affichage du temps de traitement
     runtime = time.time() - STARTTIME
     print("Runtime : %.2f seconds" % runtime)
 
@@ -128,35 +123,48 @@ def fetch_posts(data, reddit):
     Extrait les commentaires du subreddit subreddit entre les timestamp \
     beginningtime et endtime. Renvoie un dataframe panda
     """
-    columns = ["ID", "Nom", "Date", "Score", "Ratio", "Commentaires", "Flair",
-               "Domaine", "Texte", "URL", "Permalien", "Auteur",
-               "CSS Flair Auteur", "Texte Flair Auteur", "Doré", "Peut dorer",
-               "Caché", "Archivé", "Peut crossposter"]
+    columns = ["ID",
+               "Title",
+               "Date",
+               "Score",
+               "Ratio",
+               "Comments",
+               "Flair",
+               "Domain",
+               "Text",
+               "URL",
+               "Permalink",
+               "Author",
+               "Author CSS Flair",
+               "Author Text Flair",
+               "Gilded",
+               "Can Gild",
+               "Hidden",
+               "Archived",
+               "Can Crosspost"]
     df = []
     for x in tqdm(data, dynamic_ncols=True):
         try:
             submission = reddit.submission(id=str(x))
             df.append({"Score": submission.score,
-                       "Auteur": str(submission.author),
-                       "CSS Flair Auteur":
-                       str(submission.author_flair_css_class),
-                       "Texte Flair Auteur": str(submission.author_flair_text),
+                       "Author": str(submission.author),
+                       "Author CSS Flair": str(submission.author_flair_css_class),
+                       "Author Text Flair": str(submission.author_flair_text),
                        "Ratio": submission.upvote_ratio,
                        "ID": submission.name,
-                       "Permalien": str("https://reddit.com" +
-                                        submission.permalink),
-                       "Nom": submission.title,
+                       "Permalink": f"https://reddit.com{submission.permalink}",
+                       "Title": submission.title,
                        "URL": submission.url,
-                       "Commentaires": submission.num_comments,
+                       "Comments": submission.num_comments,
                        "Date": submission.created_utc,
                        "Flair": str(submission.link_flair_text),
-                       "Texte": str(submission.selftext),
-                       "Domaine": submission.domain,
-                       "Doré": submission.gilded,
-                       "Caché": submission.hidden,
-                       "Archivé": submission.archived,
-                       "Peut dorer": submission.can_gild,
-                       "Peut crossposter": submission.is_crosspostable
+                       "Text": str(submission.selftext),
+                       "Domain": submission.domain,
+                       "Gilded": submission.gilded,
+                       "Hidden": submission.hidden,
+                       "Archived": submission.archived,
+                       "Can Gild": submission.can_gild,
+                       "Can Crosspost": submission.is_crosspostable
                        })
         except Exception as e:
             print("Error : " + str(e))
@@ -206,14 +214,13 @@ def redditconnect(bot):
 
 
 def parse_args():
-
     parser = argparse.ArgumentParser(description='Download all the posts of a specific subreddit')
+    parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
     parser.add_argument('-a', '--after', type=str, help='The min unixstamp to download')
     parser.add_argument('-b', '--before', type=str, help='The max unixstamp to download')
     parser.add_argument('--source', type=str, help='The name of the json file containing posts ids')
     parser.add_argument('--file', type=str, help='The name of the xlsx file containing posts already extracted')
     parser.add_argument('-s', '--subreddit', type=str, help='The subreddit to download posts from. Default : /r/france', default="france")
-    parser.add_argument('--debug', help="Affiche les informations de déboguage", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)
