@@ -233,8 +233,8 @@ def parse_args():
     parser.add_argument('-b', '--before', type=str, help='The max unixstamp to download')
     parser.add_argument('--source', type=str, help='The name of the json file containing posts ids')
     parser.add_argument('--file', type=str, help='The name of the file containing posts already extracted')
-    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx)', default='csv')
-    parser.add_argument('--import_format', type=str, help='Import format, if used with --file (csv or xlsx)', default='csv')
+    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx). Default : csv', default='csv')
+    parser.add_argument('--import_format', type=str, help='Import format, if used with --file (csv or xlsx). Default : csv', default='csv')
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)

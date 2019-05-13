@@ -122,7 +122,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Download all the posts of one or several users')
     parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.INFO)
     parser.add_argument('-u', '--username', type=str, help='The users to download posts from (separated by commas)', default='c154c7a68e0e29d9614e')
-    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx)', default='csv')
+    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx). Default : csv', default='csv')
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)

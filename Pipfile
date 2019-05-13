@@ -12,6 +12,7 @@ praw = "*"
 requests = "*"
 pandas = "*"
 numpy = "*"
+xlrd = "*"
 
 [requires]
 python_version = "3.7"

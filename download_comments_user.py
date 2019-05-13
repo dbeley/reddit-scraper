@@ -38,7 +38,7 @@ def main(args):
             else:
                 df.to_csv(f'{filename}.csv', index=False, sep='\t')
         except Exception as e:
-            logger.error(f"Does that user have made any post ? Complete error : {e}")
+            logger.error(f"Does that user have made any comment ? Complete error : {e}")
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
@@ -111,7 +111,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Download all the comments of one or several users')
     parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.INFO)
     parser.add_argument('-u', '--username', type=str, help='The users to download comments from (separated by commas)', default='c154c7a68e0e29d9614e')
-    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx)', default='csv')
+    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx). Default : csv', default='csv')
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)
