@@ -84,7 +84,7 @@ def main(args):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    filename = f"{folder}/comments_{time.time()}"
+    filename = f"{folder}/comments_{int(time.time())}"
     if export_format == 'xlsx':
         writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
         df.to_excel(writer, sheet_name='Sheet1')

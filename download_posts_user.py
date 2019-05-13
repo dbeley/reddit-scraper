@@ -30,7 +30,7 @@ def main(args):
         try:
             df = fetch_posts(i)
             df['Date'] = pd.to_datetime(df['Date'], unit='s')
-            filename = f"{folder}/posts_{time.time()}_{i}"
+            filename = f"{folder}/posts_{int(time.time())}_{i}"
             if export_format == 'xlsx':
                 writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
                 df.to_excel(writer, sheet_name='Sheet1')

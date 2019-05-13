@@ -29,7 +29,7 @@ def getPushshiftData(before, after, sub):
 
 def main(args):
     logger.debug("Démarrage du script")
-    # current folder
+    # Current folder
     original_folder = os.getcwd()
     # folder where to put extracted data
     folder = "Subreddit"
@@ -107,21 +107,22 @@ def main(args):
         with open(source, "r") as f:
             data = json.load(f)
 
-    # ID export
+    # Filename without extension
     filename_without_ext = "posts_{}_{}".format(str(subreddit), str(int(before)))
+
+    # ID export
     export(data, folder, original_folder, filename_without_ext, type="json")
 
     # Extract posts
     df = pd.DataFrame()
     df = fetch_posts(data, reddit)
 
-    # create the complete dataframe if df_orig exists
+    # Create the complete dataframe if df_orig exists
     if df_orig is not None:
         df_orig = df_orig[~df_orig['ID'].isin(df['ID'])]
         df = df_orig.append(df)
 
     # Posts export
-    filename_without_ext = "posts_{}_{}".format(str(subreddit), str(int(before)))
     export(df, folder, original_folder, filename_without_ext, export_format)
 
     runtime = time.time() - STARTTIME
