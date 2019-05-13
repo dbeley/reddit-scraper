@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Download all the posts from a subreddit and export it in xlsx.
+Download all the posts from a subreddit and export it in xlsx or csv.
 """
 
 import argparse
@@ -41,6 +41,10 @@ def main(args):
     file = args.file
     # json file containing post ids
     source = args.source
+
+    export_format = args.export_format
+    import_format = args.import_format
+
     df_orig = None
 
     logger.debug("Connexion à l'API reddit")
@@ -61,7 +65,10 @@ def main(args):
     if file is not None:
         logger.debug("Argument \'file\' détecté")
         logger.debug("Chargement df_orig")
-        df_orig = pd.read_excel(file)
+        if import_format == 'xlsx':
+            df_orig = pd.read_excel(file)
+        else:
+            df_orig = pd.read_csv(file, sep='\t', encoding='utf-8')
         logger.debug("#### LIST ####")
         logger.debug(list(df_orig))
         logger.debug("#### INFO ####")
@@ -100,9 +107,11 @@ def main(args):
         with open(source, "r") as f:
             data = json.load(f)
 
-    filename = "posts_{}_{}.json".format(str(subreddit), str(int(before)))
-    export(data, folder, original_folder, filename, "json")
+    # ID export
+    filename_without_ext = "posts_{}_{}".format(str(subreddit), str(int(before)))
+    export(data, folder, original_folder, filename_without_ext, type="json")
 
+    # Extract posts
     df = pd.DataFrame()
     df = fetch_posts(data, reddit)
 
@@ -111,8 +120,9 @@ def main(args):
         df_orig = df_orig[~df_orig['ID'].isin(df['ID'])]
         df = df_orig.append(df)
 
-    filename = "posts_{}_{}.xlsx".format(str(subreddit), str(int(before)))
-    export(df, folder, original_folder, filename, "xlsx")
+    # Posts export
+    filename_without_ext = "posts_{}_{}".format(str(subreddit), str(int(before)))
+    export(df, folder, original_folder, filename_without_ext, export_format)
 
     runtime = time.time() - STARTTIME
     print("Runtime : %.2f seconds" % runtime)
@@ -189,15 +199,17 @@ def export(data, folder, original_folder, filename, type):
 
     if type == "json":
         # export json
-        with open(filename, "w") as f:
+        with open(f"{filename}.json", "w") as f:
             json.dump(data, f)
     elif type == "xlsx":
-        writer = pd.ExcelWriter(filename, engine='xlsxwriter',
+        writer = pd.ExcelWriter(f"{filename}.xlsx", engine='xlsxwriter',
                                 options={'strings_to_urls': False})
         logger.debug("df.to_excel")
         data.to_excel(writer, sheet_name='Sheet1', index=False)
         logger.debug("writer.save")
         writer.save()
+    elif type == "csv":
+        data.to_csv(f'{filename}.csv', index=False, sep='\t')
 
     os.chdir(original_folder)
 
@@ -216,11 +228,13 @@ def redditconnect(bot):
 def parse_args():
     parser = argparse.ArgumentParser(description='Download all the posts of a specific subreddit')
     parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
+    parser.add_argument('-s', '--subreddit', type=str, help='The subreddit to download posts from. Default : /r/france', default="france")
     parser.add_argument('-a', '--after', type=str, help='The min unixstamp to download')
     parser.add_argument('-b', '--before', type=str, help='The max unixstamp to download')
     parser.add_argument('--source', type=str, help='The name of the json file containing posts ids')
-    parser.add_argument('--file', type=str, help='The name of the xlsx file containing posts already extracted')
-    parser.add_argument('-s', '--subreddit', type=str, help='The subreddit to download posts from. Default : /r/france', default="france")
+    parser.add_argument('--file', type=str, help='The name of the file containing posts already extracted')
+    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx)', default='csv')
+    parser.add_argument('--import_format', type=str, help='Import format, if used with --file (csv or xlsx)', default='csv')
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)

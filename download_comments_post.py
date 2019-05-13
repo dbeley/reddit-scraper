@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Download comment from posts and export it to xlsx.
+Download comment from posts by IDs or URLs and export it to xlsx or csv
 """
 
 import praw
@@ -25,10 +25,15 @@ def main(args):
     urls = args.url
     file = args.file
     source = args.source
+    export_format = args.export_format
+    import_format = args.import_format
 
     if file is not None:
-        df_orig = pd.read_excel(file)
-        logger.debug(list(df_orig))
+        if import_format == 'xlsx':
+            df_orig = pd.read_excel(file)
+            logger.debug(list(df_orig))
+        else:
+            df_orig = pd.read_csv(file, sep='\t', encoding='utf-8')
 
     df = pd.DataFrame()
     if source is not None:
@@ -79,7 +84,13 @@ def main(args):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    export_excel(df, folder)
+    filename = f"{folder}/comments_{time.time()}"
+    if export_format == 'xlsx':
+        writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
+        df.to_excel(writer, sheet_name='Sheet1')
+        writer.save()
+    else:
+        df.to_csv(f'{filename}.csv', index=False, sep='\t')
 
     runtime = time.time() - STARTTIME
     logger.info("Runtime : %.2f seconds" % runtime)
@@ -126,7 +137,7 @@ def fetch_comments(reddit, url=None, id=None):
                   "Post ID": submission.id,
                   "Post Permalink": f"https://reddit.com{submission.permalink}",
                   "Post Title": submission.title,
-                  "Post Author": x.link_author,
+                  "Post Author": submission.author,
                   "Post URL": submission.url,
                   "Permalink": f"https://reddit.com{x.permalink}"
                   })
@@ -136,22 +147,6 @@ def fetch_comments(reddit, url=None, id=None):
     logger.debug("Creating pandas dataframe DONE.")
 
     return df
-
-
-def export_excel(df, folder):
-    """
-    Fonction d'export
-    """
-
-    actualtime = int(time.time())
-
-    writer = pd.ExcelWriter(f'{folder}/comments_{actualtime}.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
-
-    df.to_excel(writer, sheet_name='Sheet1')
-
-    writer.save()
-
-    logger.debug("Done.")
 
 
 def redditconnect(bot):
@@ -165,12 +160,14 @@ def redditconnect(bot):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Download comments of a post  or a set of posts")
+    parser = argparse.ArgumentParser(description="Download comments of a post or a set of posts (by id or by url)")
     parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.WARNING)
     parser.add_argument('-i', '--id', type=str, help='IDs of the posts to extract (separated by commas)')
     parser.add_argument('-u', '--url', type=str, help='URLs of the posts to extract (separated by commas)')
     parser.add_argument('--source', type=str, help='The name of the json file containing posts ids')
-    parser.add_argument('--file', type=str, help='The name of the xlsx file containing comments already extracted')
+    parser.add_argument('--file', type=str, help='The name of the file containing comments already extracted')
+    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx)', default='csv')
+    parser.add_argument('--import_format', type=str, help='Import format, if used with --file (csv or xlsx)', default='csv')
 
     args = parser.parse_args()
 

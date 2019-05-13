@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Download posts from a user and export it in xlsx.
+Download posts from one or several users and export it in xlsx or csv.
 """
 
 import praw
@@ -17,6 +17,8 @@ temps_debut = time.time()
 
 def main(args):
     username = args.username
+    export_format = args.export_format
+
     folder = "User"
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -27,11 +29,17 @@ def main(args):
         logger.info(f"Fetching posts for user {i}")
         try:
             df = fetch_posts(i)
-
             df['Date'] = pd.to_datetime(df['Date'], unit='s')
-            export_excel(df, i, folder)
+            filename = f"{folder}/posts_{time.time()}_{i}"
+            if export_format == 'xlsx':
+                writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
+                df.to_excel(writer, sheet_name='Sheet1')
+                writer.save()
+            else:
+                df.to_csv(f'{filename}.csv', index=False, sep='\t')
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Does that user have made any post ? Complete error : {e}")
+
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
 
@@ -103,17 +111,6 @@ def fetch_posts(username):
     return df
 
 
-def export_excel(df, username, folder):
-
-    actualtime = int(time.time())
-
-    writer = pd.ExcelWriter(f'{folder}/posts_{actualtime}_{username}.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
-
-    df.to_excel(writer, sheet_name='Sheet1')
-
-    writer.save()
-
-
 def redditconnect(bot):
     user_agent = "python:script:download_posts_user"
 
@@ -122,9 +119,10 @@ def redditconnect(bot):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Download all the posts of a specific user')
+    parser = argparse.ArgumentParser(description='Download all the posts of one or several users')
     parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.INFO)
-    parser.add_argument('-u', '--username', type=str, help='The user to download posts from. ', default='c154c7a68e0e29d9614e')
+    parser.add_argument('-u', '--username', type=str, help='The users to download posts from (separated by commas)', default='c154c7a68e0e29d9614e')
+    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx)', default='csv')
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)

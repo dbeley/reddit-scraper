@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Download comments from one or several users and export it in xlsx.
+Download comments from one or several users and export it in xlsx or csv.
 """
 
 import praw
@@ -17,6 +17,8 @@ temps_debut = time.time()
 
 def main(args):
     username = args.username
+    export_format = args.export_format
+
     folder = "User"
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -24,11 +26,20 @@ def main(args):
     username = [x.strip() for x in username.split(',')]
 
     for i in username:
-        print(f"Fetching comments for user {i}")
-        df = fetch_comments(i)
-        df['Date'] = pd.to_datetime(df['Date'], unit='s')
+        logger.info(f"Fetching comments for user {i}")
+        try:
+            df = fetch_comments(i)
+            df['Date'] = pd.to_datetime(df['Date'], unit='s')
+            filename = f"{folder}/comments_{time.time()}_{i}"
+            if export_format == 'xlsx':
+                writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
+                df.to_excel(writer, sheet_name='Sheet1')
+                writer.save()
+            else:
+                df.to_csv(f'{filename}.csv', index=False, sep='\t')
+        except Exception as e:
+            logger.error(f"Does that user have made any post ? Complete error : {e}")
 
-        export_excel(df, i, folder)
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
 
@@ -89,17 +100,6 @@ def fetch_comments(username):
     return df
 
 
-def export_excel(df, username, folder):
-
-    actualtime = int(time.time())
-
-    writer = pd.ExcelWriter(f'{folder}/comments_{actualtime}_{username}.xlsx', engine='xlsxwriter',options={'strings_to_urls': False})
-
-    df.to_excel(writer, sheet_name='Sheet1')
-
-    writer.save()
-
-
 def redditconnect(bot):
     user_agent = "python:script:download_comments_user"
 
@@ -108,9 +108,10 @@ def redditconnect(bot):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Download all the comments of a specific user')
+    parser = argparse.ArgumentParser(description='Download all the comments of one or several users')
     parser.add_argument('--debug', help="Display debugging information", action="store_const", dest="loglevel", const=logging.DEBUG, default=logging.INFO)
-    parser.add_argument('-u', '--username', type=str, help='The user to download comments from. ', default='c154c7a68e0e29d9614e')
+    parser.add_argument('-u', '--username', type=str, help='The users to download comments from (separated by commas)', default='c154c7a68e0e29d9614e')
+    parser.add_argument('--export_format', type=str, help='Export format (csv or xlsx)', default='csv')
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel)
