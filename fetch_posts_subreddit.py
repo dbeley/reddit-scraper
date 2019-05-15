@@ -5,14 +5,14 @@ Download all the posts from a subreddit and export it in xlsx or csv.
 
 import argparse
 import logging
-import os
 import time
 import json
 import requests
-import pandas as pd
 import praw
-from tqdm import tqdm
 import xlsxwriter
+import pandas as pd
+from tqdm import tqdm
+from pathlib import Path
 
 logger = logging.getLogger()
 STARTTIME = time.time()
@@ -29,13 +29,11 @@ def getPushshiftData(before, after, sub):
 
 def main(args):
     logger.debug("Démarrage du script")
-    # Current folder
-    original_folder = os.getcwd()
-    # folder where to put extracted data
-    folder = "Subreddit"
+    # export folder
+    export_folder = "Subreddit"
     # list of post ID's
     post_ids = []
-    # Subreddit to query
+    # subreddit to query
     subreddit = args.subreddit
     # xlsx file containing already extracted data
     file = args.file
@@ -111,7 +109,7 @@ def main(args):
     filename_without_ext = "posts_{}_{}".format(str(subreddit), str(int(before)))
 
     # ID export
-    export(data, folder, original_folder, filename_without_ext, type="json")
+    export(data, export_folder, filename_without_ext, type="json")
 
     # Extract posts
     df = pd.DataFrame()
@@ -123,7 +121,7 @@ def main(args):
         df = df_orig.append(df)
 
     # Posts export
-    export(df, folder, original_folder, filename_without_ext, export_format)
+    export(df, export_folder, filename_without_ext, type=export_format)
 
     runtime = time.time() - STARTTIME
     print("Runtime : %.2f seconds" % runtime)
@@ -187,20 +185,18 @@ def fetch_posts(data, reddit):
     return df
 
 
-def export(data, folder, original_folder, filename, type):
+def export(data, folder, filename, type):
     """
     Fonction d'export
     """
 
-    # ouverture du dossier d'export
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    os.chdir(folder)
+    Path(folder).mkdir(parents=True, exist_ok=True)
+
     logger.debug("Opening subreddit folder DONE")
 
     if type == "json":
         # export json
-        with open(f"{filename}.json", "w") as f:
+        with open(f"{folder}/{filename}.json", "w") as f:
             json.dump(data, f)
     elif type == "xlsx":
         writer = pd.ExcelWriter(f"{filename}.xlsx", engine='xlsxwriter',
@@ -210,9 +206,7 @@ def export(data, folder, original_folder, filename, type):
         logger.debug("writer.save")
         writer.save()
     elif type == "csv":
-        data.to_csv(f'{filename}.csv', index=False, sep='\t')
-
-    os.chdir(original_folder)
+        data.to_csv(f'{folder}/{filename}.csv', index=False, sep='\t')
 
 
 def redditconnect(bot):

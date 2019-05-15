@@ -5,11 +5,11 @@ Download posts from one or several users and export it in xlsx or csv.
 
 import praw
 import argparse
-import os
 import time
 import logging
 import pandas as pd
 from tqdm import tqdm
+from pathlib import Path
 
 logger = logging.getLogger()
 temps_debut = time.time()
@@ -20,8 +20,7 @@ def main(args):
     export_format = args.export_format
 
     folder = "User"
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    Path(folder).mkdir(parents=True, exist_ok=True)
 
     username = [x.strip() for x in username.split(',')]
 

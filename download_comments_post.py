@@ -4,13 +4,13 @@ Download comment from posts by IDs or URLs and export it to xlsx or csv
 """
 
 import praw
-import pandas as pd
 import argparse
-from tqdm import tqdm
-import os
 import time
 import json
 import logging
+import pandas as pd
+from pathlib import Path
+from tqdm import tqdm
 
 logger = logging.getLogger()
 STARTTIME = time.time()
@@ -81,8 +81,7 @@ def main(args):
         df_orig = df_orig[~df_orig['ID'].isin(df['ID'])]
         df = df_orig.append(df)
 
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    Path(folder).mkdir(parents=True, exist_ok=True)
 
     filename = f"{folder}/comments_{int(time.time())}"
     if export_format == 'xlsx':
