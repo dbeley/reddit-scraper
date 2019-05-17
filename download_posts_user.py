@@ -16,28 +16,29 @@ temps_debut = time.time()
 
 
 def main(args):
-    username = args.username
-    export_format = args.export_format
-
     folder = "User"
     Path(folder).mkdir(parents=True, exist_ok=True)
 
-    username = [x.strip() for x in username.split(',')]
+    if args.username:
+        username = [x.strip() for x in args.username.split(',')]
+    else:
+        logger.error("Use -u to set the username")
+        exit()
 
     for i in username:
-        logger.info(f"Fetching posts for user {i}")
+        logger.info("Fetching posts for user %s", i)
         try:
             df = fetch_posts(i)
             df['Date'] = pd.to_datetime(df['Date'], unit='s')
             filename = f"{folder}/posts_{int(time.time())}_{i}"
-            if export_format == 'xlsx':
+            if args.export_format == 'xlsx':
                 writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
                 df.to_excel(writer, sheet_name='Sheet1')
                 writer.save()
             else:
                 df.to_csv(f'{filename}.csv', index=False, sep='\t')
         except Exception as e:
-            logger.error(f"Does that user have made any post ? Complete error : {e}")
+            logger.error("Does that user have made any post ? Complete error : %s", e)
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
@@ -69,7 +70,7 @@ def fetch_posts(username):
     user = reddit.redditor(username)
 
     for index, submission in enumerate(user.submissions.new(limit=None), 1):
-        logger.debug(f"\rFetching post {index} for user {username}…")
+        logger.debug("\rFetching post %s for user {username}…", index)
         posts.append(submission)
 
     logger.debug("Fetching posts DONE.")

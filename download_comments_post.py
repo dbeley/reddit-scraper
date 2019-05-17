@@ -21,36 +21,29 @@ def main(args):
 
     folder = "Comments"
 
-    ids = args.id
-    urls = args.url
-    file = args.file
-    source = args.source
-    export_format = args.export_format
-    import_format = args.import_format
-
-    if file is not None:
-        if import_format == 'xlsx':
-            df_orig = pd.read_excel(file)
+    if args.file is not None:
+        if args.import_format == 'xlsx':
+            df_orig = pd.read_excel(args.file)
             logger.debug(list(df_orig))
         else:
-            df_orig = pd.read_csv(file, sep='\t', encoding='utf-8')
+            df_orig = pd.read_csv(args.file, sep='\t', encoding='utf-8')
 
     df = pd.DataFrame()
-    if source is not None:
-        with open(source, "r") as f:
+    if args.source is not None:
+        with open(args.source, "r") as f:
             data = json.load(f)
         for id in tqdm(data, dynamic_ncols=True):
-            logger.info(f"Extracting comments for id {id}")
+            logger.info("Extracting comments for id %s", id)
             df = df.append(fetch_comments(reddit, id=id))
-    elif ids is not None:
-        ids = [x.strip() for x in ids.split(',')]
+    elif args.id is not None:
+        ids = [x.strip() for x in args.id.split(',')]
         for id in tqdm(ids, dynamic_ncols=True):
-            logger.info(f"Extracting comments for id {id}")
+            logger.info("Extracting comments for id %s", id)
             df = df.append(fetch_comments(reddit, id=id))
-    elif urls is not None:
-        urls = [x.strip() for x in urls.split(',')]
+    elif args.urls is not None:
+        urls = [x.strip() for x in args.urls.split(',')]
         for url in tqdm(urls, dynamic_ncols=True):
-            logger.info(f"Extracting comments for url {url}")
+            logger.info("Extracting comments for url %s", url)
             df = df.append(fetch_comments(reddit, url=url))
     else:
         logger.error("Error in arguments. Use --source,-i/--id or -u/--url")
@@ -84,7 +77,7 @@ def main(args):
     Path(folder).mkdir(parents=True, exist_ok=True)
 
     filename = f"{folder}/comments_{int(time.time())}"
-    if export_format == 'xlsx':
+    if args.export_format == 'xlsx':
         writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
         df.to_excel(writer, sheet_name='Sheet1')
         writer.save()
@@ -110,7 +103,7 @@ def fetch_comments(reddit, url=None, id=None):
 
     submission.comments.replace_more(limit=None)
     for index, comment in enumerate(submission.comments.list(), 1):
-        logger.debug(f"\rFetching comment {index} …")
+        logger.debug("\rFetching comment %s …", index)
         comments.append(comment)
 
     logger.debug("Fetching comments DONE.")

@@ -16,28 +16,25 @@ temps_debut = time.time()
 
 
 def main(args):
-    username = args.username
-    export_format = args.export_format
-
     folder = "User"
     Path(folder).mkdir(parents=True, exist_ok=True)
 
-    username = [x.strip() for x in username.split(',')]
+    username = [x.strip() for x in args.username.split(',')]
 
     for i in username:
-        logger.info(f"Fetching comments for user {i}")
+        logger.info("Fetching comments for user %s", i)
         try:
             df = fetch_comments(i)
             df['Date'] = pd.to_datetime(df['Date'], unit='s')
             filename = f"{folder}/comments_{int(time.time())}_{i}"
-            if export_format == 'xlsx':
+            if args.export_format == 'xlsx':
                 writer = pd.ExcelWriter(f'{filename}.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
                 df.to_excel(writer, sheet_name='Sheet1')
                 writer.save()
             else:
                 df.to_csv(f'{filename}.csv', index=False, sep='\t')
         except Exception as e:
-            logger.error(f"Does that user have made any comment ? Complete error : {e}")
+            logger.error("Does that user have made any comment ? Complete error : %s", e)
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
@@ -64,7 +61,7 @@ def fetch_comments(username):
     user = reddit.redditor(username)
 
     for index, submission in enumerate(user.comments.new(limit=None), 1):
-        logger.debug(f"\rFetching comment {index} for user {username}…")
+        logger.debug("\rFetching comment %s for user %s…", index, username)
         comments.append(submission)
 
     logger.debug("Fetching comments DONE.")

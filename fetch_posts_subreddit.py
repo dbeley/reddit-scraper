@@ -33,12 +33,6 @@ def main(args):
     export_folder = "Subreddit"
     # list of post ID's
     post_ids = []
-    # subreddit to query
-    subreddit = args.subreddit
-    # xlsx file containing already extracted data
-    file = args.file
-    # json file containing post ids
-    source = args.source
 
     export_format = args.export_format
     import_format = args.import_format
@@ -60,13 +54,13 @@ def main(args):
     else:
         before = int(STARTTIME) - 600000
 
-    if file is not None:
+    if args.file is not None:
         logger.debug("Argument \'file\' détecté")
         logger.debug("Chargement df_orig")
         if import_format == 'xlsx':
-            df_orig = pd.read_excel(file)
+            df_orig = pd.read_excel(args.file)
         else:
-            df_orig = pd.read_csv(file, sep='\t', encoding='utf-8')
+            df_orig = pd.read_csv(args.file, sep='\t', encoding='utf-8')
         logger.debug("#### LIST ####")
         logger.debug(list(df_orig))
         logger.debug("#### INFO ####")
@@ -82,11 +76,11 @@ def main(args):
         # on enlève de df tout ce qui va être extrait
         after = int(datemax.timestamp())
 
-    if source is None:
+    if args.source is None:
         logger.debug("Begin extracting Pushshift data")
-        logger.debug("before: {0}, after: {1}, subreddit:{2}".format(str(before), str(after),
-                    str(subreddit)))
-        data = getPushshiftData(before, after, subreddit)
+        logger.debug("before: %s, after: %s, subreddit: %s", str(before), str(after),
+                     str(args.subreddit))
+        data = getPushshiftData(before, after, args.subreddit)
 
         # Will run until all posts have been gathered
         # from the 'after' date up until todays date
@@ -95,18 +89,18 @@ def main(args):
                 post_ids.append(submission["id"])
             logger.debug("timestamp = " + str(data[-1]['created_utc']))
             # Calls getPushshiftData() with the created date of the last submission
-            data = getPushshiftData(before, data[-1]['created_utc'], subreddit)
+            data = getPushshiftData(before, data[-1]['created_utc'], args.subreddit)
         logger.debug("Extracting Pushshift data DONE.")
 
         data = post_ids
 
     else:
         logger.debug("ID file detected")
-        with open(source, "r") as f:
+        with open(args.source, "r") as f:
             data = json.load(f)
 
     # Filename without extension
-    filename_without_ext = "posts_{}_{}".format(str(subreddit), str(int(before)))
+    filename_without_ext = "posts_{}_{}".format(str(args.subreddit), str(int(before)))
 
     # ID export
     export(data, export_folder, filename_without_ext, type="json")
