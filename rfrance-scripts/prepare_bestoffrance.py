@@ -12,26 +12,30 @@ STARTTIME = time.time()
 def index_containing_substring(the_list, substring):
     for i, s in enumerate(the_list):
         if substring in s:
-              return i
+            return i
     return -1
 
 
 def main():
     df = pd.read_excel(sys.argv[1])
 
-    Texte = df['Texte'].str.split('\n')
+    Texte = df["Texte"].str.split("\n")
 
     for i, val in enumerate(Texte):
         print(i, val)
         print(str(val[index_containing_substring(Texte[i], "total")]))
 
     Texte = Texte.apply(pd.Series)
-    Texte = Texte.rename(columns = lambda x : 'str_' + str(x))
+    Texte = Texte.rename(columns=lambda x: "str_" + str(x))
 
-    df = pd.concat([df[:], Texte[:]], axis = 1)
+    df = pd.concat([df[:], Texte[:]], axis=1)
 
-    writer = pd.ExcelWriter('BestOfFrance_traité.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
-    df.to_excel(writer, sheet_name='Sheet1')
+    writer = pd.ExcelWriter(
+        "BestOfFrance_traité.xlsx",
+        engine="xlsxwriter",
+        options={"strings_to_urls": False},
+    )
+    df.to_excel(writer, sheet_name="Sheet1")
     writer.save()
 
     # affichage du temps de traitement
@@ -39,5 +43,5 @@ def main():
     print("Runtime : %.2f seconds" % runtime)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

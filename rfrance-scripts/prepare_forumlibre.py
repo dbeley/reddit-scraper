@@ -13,11 +13,11 @@ STARTTIME = time.time()
 
 def main():
     df = pd.read_excel(sys.argv[1])
-    df_fl = df[df['Flair'] == "Forum Libre"]
-    df_fl = df_fl[df_fl['Nom'].str.contains("Forum Libre")]
-    df_fl = df_fl[df_fl['Auteur'] == "AutoModerator"]
+    df_fl = df[df["Flair"] == "Forum Libre"]
+    df_fl = df_fl[df_fl["Nom"].str.contains("Forum Libre")]
+    df_fl = df_fl[df_fl["Auteur"] == "AutoModerator"]
 
-    id_fl = df_fl['ID'].tolist()
+    id_fl = df_fl["ID"].tolist()
     id_fl = [s[3:] for s in id_fl]
     with open("export_fl.json", "w") as f:
         json.dump(id_fl, f)
@@ -27,5 +27,5 @@ def main():
     print("Runtime : %.2f seconds" % runtime)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
