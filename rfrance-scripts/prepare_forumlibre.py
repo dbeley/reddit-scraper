@@ -12,10 +12,11 @@ STARTTIME = time.time()
 
 
 def main():
-    df = pd.read_excel(sys.argv[1])
+    # df = pd.read_excel(sys.argv[1])
+    df = pd.read_csv(sys.argv[1], sep="\t", encoding="utf-8")
     df_fl = df[df["Flair"] == "Forum Libre"]
-    df_fl = df_fl[df_fl["Nom"].str.contains("Forum Libre")]
-    df_fl = df_fl[df_fl["Auteur"] == "AutoModerator"]
+    df_fl = df_fl[df_fl["Title"].str.contains("Forum Libre")]
+    df_fl = df_fl[df_fl["Author"] == "AutoModerator"]
 
     id_fl = df_fl["ID"].tolist()
     id_fl = [s[3:] for s in id_fl]

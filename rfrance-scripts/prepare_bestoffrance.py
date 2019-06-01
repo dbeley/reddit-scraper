@@ -17,9 +17,10 @@ def index_containing_substring(the_list, substring):
 
 
 def main():
-    df = pd.read_excel(sys.argv[1])
+    # df = pd.read_excel(sys.argv[1])
+    df = pd.read_csv(sys.argv[1], sep="\t", encoding="utf-8")
 
-    Texte = df["Texte"].str.split("\n")
+    Texte = df["Text"].str.split("\n")
 
     for i, val in enumerate(Texte):
         print(i, val)
@@ -29,14 +30,15 @@ def main():
     Texte = Texte.rename(columns=lambda x: "str_" + str(x))
 
     df = pd.concat([df[:], Texte[:]], axis=1)
+    df.to_csv("BestOfFrance_traité.csv", index=False, sep="\t")
 
-    writer = pd.ExcelWriter(
-        "BestOfFrance_traité.xlsx",
-        engine="xlsxwriter",
-        options={"strings_to_urls": False},
-    )
-    df.to_excel(writer, sheet_name="Sheet1")
-    writer.save()
+    # writer = pd.ExcelWriter(
+    #     "BestOfFrance_traité.xlsx",
+    #     engine="xlsxwriter",
+    #     options={"strings_to_urls": False},
+    # )
+    # df.to_excel(writer, sheet_name="Sheet1")
+    # writer.save()
 
     # affichage du temps de traitement
     runtime = time.time() - STARTTIME
