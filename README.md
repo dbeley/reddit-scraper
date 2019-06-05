@@ -1,6 +1,6 @@
-# reddit-scripts
+# reddit-scraper
 
-Various reddit scripts.
+Various scripts to scrape reddit.
 
 - **download_comments_post.py** : Download the comments of one or several posts.
 - **download_comments_user.py** : Download the last 1000 comments of one or several users.
