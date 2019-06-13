@@ -1,5 +1,7 @@
 # reddit-scraper
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/1b70d3ce7401431e88f357e090852ea9)](https://app.codacy.com/app/dbeley/reddit-scraper?utm_source=github.com&utm_medium=referral&utm_content=dbeley/reddit-scraper&utm_campaign=Badge_Grade_Dashboard)
+
 Various scripts to scrape reddit.
 
 - **download_comments_post.py** : Download the comments of one or several posts.
