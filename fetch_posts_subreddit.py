@@ -118,7 +118,7 @@ def main(args):
     )
 
     # ID export
-    export(data, export_folder, filename_without_ext, type="json")
+    export(data, export_folder, filename_without_ext, export_type="json")
 
     # Extract posts
     df = pd.DataFrame()
@@ -130,7 +130,7 @@ def main(args):
         df = df_orig.append(df)
 
     # Posts export
-    export(df, export_folder, filename_without_ext, type=export_format)
+    export(df, export_folder, filename_without_ext, export_type=export_format)
 
     runtime = time.time() - STARTTIME
     print("Runtime : %.2f seconds" % runtime)
