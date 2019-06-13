@@ -146,4 +146,3 @@ optional arguments:
                         Import format, if used with --file (csv or xlsx).
                         Default : csv
 ```
-

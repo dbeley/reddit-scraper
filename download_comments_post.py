@@ -32,14 +32,14 @@ def main(args):
     if args.source is not None:
         with open(args.source, "r") as f:
             data = json.load(f)
-        for id in tqdm(data, dynamic_ncols=True):
-            logger.info("Extracting comments for id %s", id)
-            df = df.append(fetch_comments(reddit, id=id))
+        for post_did in tqdm(data, dynamic_ncols=True):
+            logger.info("Extracting comments for id %s", post_id)
+            df = df.append(fetch_comments(reddit, id=post_id))
     elif args.id is not None:
         ids = [x.strip() for x in args.id.split(",")]
-        for id in tqdm(ids, dynamic_ncols=True):
-            logger.info("Extracting comments for id %s", id)
-            df = df.append(fetch_comments(reddit, id=id))
+        for post_id in tqdm(ids, dynamic_ncols=True):
+            logger.info("Extracting comments for id %s", post_id)
+            df = df.append(fetch_comments(reddit, id=post_id))
     elif args.urls is not None:
         urls = [x.strip() for x in args.urls.split(",")]
         for url in tqdm(urls, dynamic_ncols=True):
@@ -93,10 +93,10 @@ def main(args):
     logger.info("Runtime : %.2f seconds" % runtime)
 
 
-def fetch_comments(reddit, url=None, id=None):
+def fetch_comments(reddit, url=None, post_id=None):
     comments = []
-    if id:
-        submission = reddit.submission(id=id)
+    if post_id:
+        submission = reddit.submission(id=post_id)
     elif url:
         submission = reddit.submission(url=url)
     else:

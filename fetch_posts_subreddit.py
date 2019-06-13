@@ -199,7 +199,7 @@ def fetch_posts(data, reddit):
     return df
 
 
-def export(data, folder, filename, type):
+def export(data, folder, filename, export_type):
     """
     Fonction d'export
     """
@@ -208,11 +208,11 @@ def export(data, folder, filename, type):
 
     logger.debug("Opening subreddit folder DONE")
 
-    if type == "json":
+    if export_type == "json":
         # export json
         with open(f"{folder}/{filename}.json", "w") as f:
             json.dump(data, f)
-    elif type == "xlsx":
+    elif export_type == "xlsx":
         writer = pd.ExcelWriter(
             f"{filename}.xlsx",
             engine="xlsxwriter",
@@ -222,7 +222,7 @@ def export(data, folder, filename, type):
         data.to_excel(writer, sheet_name="Sheet1", index=False)
         logger.debug("writer.save")
         writer.save()
-    elif type == "csv":
+    elif export_type == "csv":
         data.to_csv(f"{folder}/{filename}.csv", index=False, sep="\t")
 
 
