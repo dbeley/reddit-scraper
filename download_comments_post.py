@@ -32,14 +32,14 @@ def main(args):
     if args.source is not None:
         with open(args.source, "r") as f:
             data = json.load(f)
-        for post_did in tqdm(data, dynamic_ncols=True):
+        for post_id in tqdm(data, dynamic_ncols=True):
             logger.info("Extracting comments for id %s", post_id)
-            df = df.append(fetch_comments(reddit, id=post_id))
+            df = df.append(fetch_comments(reddit, post_id=post_id))
     elif args.id is not None:
         ids = [x.strip() for x in args.id.split(",")]
         for post_id in tqdm(ids, dynamic_ncols=True):
             logger.info("Extracting comments for id %s", post_id)
-            df = df.append(fetch_comments(reddit, id=post_id))
+            df = df.append(fetch_comments(reddit, post_id=post_id))
     elif args.urls is not None:
         urls = [x.strip() for x in args.urls.split(",")]
         for url in tqdm(urls, dynamic_ncols=True):
