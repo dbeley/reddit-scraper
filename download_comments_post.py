@@ -71,7 +71,7 @@ def main(args):
     df = df[columns]
     df["Date"] = pd.to_datetime(df["Date"], unit="s")
 
-    if file is not None:
+    if args.file is not None:
         df_orig = df_orig[~df_orig["ID"].isin(df["ID"])]
         df = df_orig.append(df)
 
