@@ -1,0 +1,11 @@
+praw.ini
+Comments/
+Docs/
+Subreddit/
+User/
+Bot*/
+*.json
+Scripts/
+tags
+analyse_r_france/
+.venv/
