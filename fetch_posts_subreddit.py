@@ -41,9 +41,6 @@ def main(args):
     # list of post ID's
     post_ids = []
 
-    export_format = args.export_format
-    import_format = args.import_format
-
     df_orig = None
 
     logger.debug("Connexion à l'API reddit")
@@ -64,19 +61,19 @@ def main(args):
     if args.file is not None:
         logger.debug("Argument 'file' détecté")
         logger.debug("Chargement df_orig")
-        if import_format == "xlsx":
+        if args.import_format == "xlsx":
             df_orig = pd.read_excel(args.file)
         else:
             df_orig = pd.read_csv(args.file, sep="\t", encoding="utf-8")
         logger.debug("#### LIST ####")
         logger.debug(list(df_orig))
         logger.debug("#### INFO ####")
+        df_orig["Date"] = pd.to_datetime(df_orig["Date"])
         datemax = df_orig["Date"].max()
         logger.debug("datemax = " + str(datemax))
         datemax = pd.to_datetime(datemax, unit="s")
         # ~ 7 jours
-        moins7j = before - 600000
-        moins7j = pd.to_datetime(moins7j, unit="s")
+        moins7j = pd.to_datetime(before - 600000, unit="s")
         if datemax >= moins7j:
             datemax = moins7j
         df_orig = df_orig[df_orig["Date"] <= datemax]
@@ -130,7 +127,9 @@ def main(args):
         df = df_orig.append(df)
 
     # Posts export
-    export(df, export_folder, filename_without_ext, export_type=export_format)
+    export(
+        df, export_folder, filename_without_ext, export_type=args.export_format
+    )
 
     runtime = time.time() - STARTTIME
     print("Runtime : %.2f seconds" % runtime)
