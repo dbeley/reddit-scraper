@@ -21,8 +21,7 @@ def main(args):
 
     username = [x.strip() for x in args.username.split(",")]
 
-    for i in username:
-        logger.info("Fetching comments for user %s", i)
+    for i in tqdm(username):
         try:
             df = fetch_comments(i)
             df["Date"] = pd.to_datetime(df["Date"], unit="s")
@@ -46,64 +45,29 @@ def main(args):
 
 
 def fetch_comments(username):
-    comments = []
-
-    columns = [
-        "User",
-        "ID",
-        "Comment",
-        "Permalink",
-        "Length",
-        "Date",
-        "Score",
-        "Subreddit",
-        "Gilded",
-        "Post ID",
-        "Post Title",
-        "Post URL",
-        "Post Permalink",
-        "Post Author",
-    ]
-
     reddit = redditconnect("bot")
     user = reddit.redditor(username)
-
-    for index, submission in enumerate(user.comments.new(limit=None), 1):
-        logger.debug("\rFetching comment %s for user %s…", index, username)
-        comments.append(submission)
-
-    logger.debug("Fetching comments DONE.")
-
-    logger.debug("Creating pandas dataframe...")
-
-    d = []
-
-    for x in tqdm(comments, dynamic_ncols=True):
-        d.append(
+    comments = []
+    user = reddit.redditor(username)
+    for index, comment in enumerate(user.comments.new(limit=None), 1):
+        comments.append(
             {
-                "Length": len(x.body),
-                "Subreddit": x.subreddit.display_name,
-                "Comment": x.body,
-                "Score": x.score,
-                "Date": x.created_utc,
-                "Gilded": x.gilded,
-                "ID": x.id,
-                "Post ID": x.link_id,
-                "Post Author": x.link_author,
-                "Post Title": x.link_title,
-                "Post URL": x.link_url,
-                "Post Permalink": f"https://reddit.com{submission.permalink}",
                 "User": str(username),
-                "Permalink": f"https://reddit.com{x.permalink}",
+                "ID": comment.id,
+                "Comment": comment.body,
+                "Permalink": f"https://reddit.com{comment.permalink}",
+                "Length": len(comment.body),
+                "Date": comment.created_utc,
+                "Score": comment.score,
+                "Subreddit": comment.subreddit.display_name,
+                "Gilded": comment.gilded,
+                "Post ID": comment.link_id,
+                "Post Title": comment.link_title,
+                "Post URL": comment.link_url,
+                "Post Author": comment.link_author,
             }
         )
-
-    df = pd.DataFrame(d)
-
-    df = df[columns]
-
-    logger.debug("Creating pandas dataframe DONE.")
-
+    df = pd.DataFrame(comments)
     return df
 
 

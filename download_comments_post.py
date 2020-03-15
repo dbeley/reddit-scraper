@@ -49,26 +49,6 @@ def main(args):
         logger.error("Error in arguments. Use --source,-i/--id or -u/--url")
         exit()
 
-    columns = [
-        "ID",
-        "Comment",
-        "Author",
-        "Subreddit",
-        "Permalink",
-        "Length",
-        "Score",
-        "Date",
-        "Gilded",
-        "Parent",
-        "Flair",
-        "Post ID",
-        "Post Permalink",
-        "Post Title",
-        "Post URL",
-        "Post Author",
-    ]
-
-    df = df[columns]
     df["Date"] = pd.to_datetime(df["Date"], unit="s")
 
     if args.file is not None:
@@ -103,48 +83,35 @@ def fetch_comments(reddit, url=None, post_id=None):
         logger.error("Error in fetch_comments")
         exit()
 
-    logger.debug("Begin fetch")
-    logger.debug(submission.fullname)
-
+    submission = reddit.submission(url=url)
     submission.comments.replace_more(limit=None)
     for index, comment in enumerate(submission.comments.list(), 1):
-        logger.debug("\rFetching comment %s …", index)
-        comments.append(comment)
-
-    logger.debug("Fetching comments DONE.")
-
-    logger.debug("Creating pandas dataframe...")
-
-    d = []
-    for x in comments:
-        if not x.author:
+        if not comment.author:
             author = "[deleted]"
         else:
-            author = x.author.name
-        d.append(
+            author = comment.author.name
+        comments.append(
             {
-                "Length": len(x.body),
-                "Subreddit": x.subreddit.display_name,
+                "ID": comment.id,
+                "Subreddit": comment.subreddit.display_name,
+                "Date": comment.created_utc,
                 "Author": author,
-                "Comment": x.body,
-                "ID": x.id,
-                "Score": x.score,
-                "Date": x.created_utc,
-                "Gilded": x.gilded,
-                "Parent": x.parent_id,
-                "Flair": x.author_flair_text,
+                "Comment": comment.body,
+                "Score": comment.score,
+                "Length": len(comment.body),
+                "Gilded": comment.gilded,
+                "Parent": comment.parent_id,
+                "Flair": comment.author_flair_text,
                 "Post ID": submission.id,
                 "Post Permalink": f"https://reddit.com{submission.permalink}",
                 "Post Title": submission.title,
                 "Post Author": submission.author,
                 "Post URL": submission.url,
-                "Permalink": f"https://reddit.com{x.permalink}",
+                "Permalink": f"https://reddit.com{comment.permalink}",
             }
         )
 
-    df = pd.DataFrame(d)
-
-    logger.debug("Creating pandas dataframe DONE.")
+    df = pd.DataFrame(comments)
 
     return df
 
