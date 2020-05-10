@@ -41,9 +41,7 @@ def main(args):
             else:
                 df.to_csv(f"{filename}.csv", index=False, sep="\t")
         except Exception as e:
-            logger.error(
-                "Does that user have made any post ? Complete error : %s", e
-            )
+            logger.error("Does that user have made any post ? Complete error : %s", e)
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
@@ -74,6 +72,7 @@ def fetch_posts(username):
                 "Archived": submission.archived,
                 "Can Gild": submission.can_gild,
                 "Can Crosspost": submission.is_crosspostable,
+                "Subreddit": submission.subreddit.display_name,
             }
         )
     df = pd.DataFrame(posts)
