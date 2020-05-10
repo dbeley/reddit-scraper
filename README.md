@@ -9,6 +9,8 @@ Various scripts to scrape reddit.
 - **download_posts_user.py** : Download the posts of one or several users.
 - **fetch_posts_subreddit.py** : Download the posts of a subreddit with the help of the Pushshift api.
 
+Some scripts using pushshift api wrapper psaw can be found in the psaw folder.
+
 ## Requirements
 
 - tqdm
@@ -18,6 +20,7 @@ Various scripts to scrape reddit.
 - numpy
 - xlsxwriter
 - xlrd
+- psaw
 
 Needs a praw.ini under the form :
 
