@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Download posts from one or several users and export it in xlsx or csv.
+Download posts from a subreddit and export it in xlsx or csv.
 """
 
 from psaw import PushshiftAPI
@@ -101,41 +101,40 @@ COLUMNS = [
 
 def main(args):
     api = PushshiftAPI()
-    folder = "User"
+    folder = "Subreddit"
     Path(folder).mkdir(parents=True, exist_ok=True)
 
-    if args.username:
-        username = [x.strip() for x in args.username.split(",")]
+    if args.subreddit:
+        subreddit = [x.strip() for x in args.subreddit.split(",")]
     else:
-        logger.error("Use -u to set the username")
+        logger.error("Use -s to set the subreddit")
         exit()
 
-    for i in username:
-        try:
-            df = fetch_posts(api, i)
-            df["date_utc"] = pd.to_datetime(df["created_utc"], unit="s")
-            df["date"] = pd.to_datetime(df["created"], unit="s")
-            df["permalink"] = "https://old.reddit.com" + df["permalink"].astype(str)
-            df = df[df.columns.intersection(COLUMNS)]
-            filename = f"{folder}/posts_{int(time.time())}_{i}"
-            if args.export_format == "xlsx":
-                writer = pd.ExcelWriter(
-                    f"{filename}.xlsx",
-                    engine="xlsxwriter",
-                    options={"strings_to_urls": False},
-                )
-                df.to_excel(writer, sheet_name="Sheet1")
-                writer.save()
-            else:
-                df.to_csv(f"{filename}.csv", index=False, sep="\t")
-        except Exception as e:
-            logger.error("Does that user have made any post ? Complete error : %s", e)
+    try:
+        df = fetch_posts(api, args.subreddit)
+        df["date_utc"] = pd.to_datetime(df["created_utc"], unit="s")
+        df["date"] = pd.to_datetime(df["created"], unit="s")
+        df["permalink"] = "https://old.reddit.com" + df["permalink"].astype(str)
+        df = df[df.columns.intersection(COLUMNS)]
+        filename = f"{folder}/posts_{args.subreddit}_{int(time.time())}"
+        if args.export_format == "xlsx":
+            writer = pd.ExcelWriter(
+                f"{filename}.xlsx",
+                engine="xlsxwriter",
+                options={"strings_to_urls": False},
+            )
+            df.to_excel(writer, sheet_name="Sheet1")
+            writer.save()
+        else:
+            df.to_csv(f"{filename}.csv", index=False, sep="\t")
+    except Exception as e:
+        logger.error("Complete error : %s", e)
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
 
-def fetch_posts(api, username):
-    res = api.search_submissions(author=username)
+def fetch_posts(api, subreddit):
+    res = api.search_submissions(subreddit=subreddit)
     df = pd.DataFrame([thing.d_ for thing in res])
     return df
 
@@ -153,11 +152,7 @@ def parse_args():
         default=logging.INFO,
     )
     parser.add_argument(
-        "-u",
-        "--username",
-        type=str,
-        help="The users to download posts from (separated by commas)",
-        required=True,
+        "-s", "--subreddit", type=str, help="Subreddit", required=True,
     )
     parser.add_argument(
         "--export_format",

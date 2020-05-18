@@ -88,7 +88,7 @@ def main(args):
         try:
             df = fetch_comments(api, i)
             df["date_utc"] = pd.to_datetime(df["created_utc"], unit="s")
-            df["date"] = pd.to_datetime(df["created_utc"], unit="s")
+            df["date"] = pd.to_datetime(df["created"], unit="s")
             df["permalink"] = "https://old.reddit.com" + df["permalink"].astype(str)
             df = df[df.columns.intersection(COLUMNS)]
             filename = f"{folder}/comments_{int(time.time())}_{i}"

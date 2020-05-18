@@ -78,21 +78,26 @@ def main(args):
         logger.error("Use -s to set search terms")
         exit()
     df = fetch_comments(api, args.search_terms, args.subreddit)
-    filename = f"{folder}/comments_{int(time.time())}_{args.search_terms}"
+    if not df.empty:
+        filename = f"{folder}/comments_{int(time.time())}_{args.search_terms}"
 
-    df["date_utc"] = pd.to_datetime(df["created_utc"], unit="s")
-    df["date"] = pd.to_datetime(df["created_utc"], unit="s")
-    df["permalink"] = "https://old.reddit.com" + df["permalink"].astype(str)
-    df = df[df.columns.intersection(COLUMNS)]
+        df["date_utc"] = pd.to_datetime(df["created_utc"], unit="s")
+        df["date"] = pd.to_datetime(df["created"], unit="s")
+        df["permalink"] = "https://old.reddit.com" + df["permalink"].astype(str)
+        df = df[df.columns.intersection(COLUMNS)]
 
-    if args.export_format == "xlsx":
-        writer = pd.ExcelWriter(
-            f"{filename}.xlsx", engine="xlsxwriter", options={"strings_to_urls": False},
-        )
-        df.to_excel(writer, sheet_name="Sheet1")
-        writer.save()
+        if args.export_format == "xlsx":
+            writer = pd.ExcelWriter(
+                f"{filename}.xlsx",
+                engine="xlsxwriter",
+                options={"strings_to_urls": False},
+            )
+            df.to_excel(writer, sheet_name="Sheet1")
+            writer.save()
+        else:
+            df.to_csv(f"{filename}.csv", index=False, sep="\t")
     else:
-        df.to_csv(f"{filename}.csv", index=False, sep="\t")
+        logger.warning("No comments found. Exiting.")
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
