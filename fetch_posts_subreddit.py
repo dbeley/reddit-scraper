@@ -27,15 +27,24 @@ def getPushshiftData(before, after, sub):
         + "&before="
         + str(before)
     )
-    r = requests.get(url)
-    data = json.loads(r.text)
+    iter = 0
+    while True:
+        iter += 1
+        time.sleep(3)
+        req = requests.get(url)
+        # allow 5 fails before exiting
+        if req.status_code != 502 or iter > 5:
+            break
+    try:
+        data = json.loads(req.text)
+    except Exception as e:
+        breakpoint()
     # with open('export_pushshift.json', 'w') as f:
     #     json.dump(data['data'], f)
     return data["data"]
 
 
 def main(args):
-    logger.debug("Démarrage du script")
     # export folder
     export_folder = "Subreddit"
     # list of post ID's
@@ -43,7 +52,6 @@ def main(args):
 
     df_orig = None
 
-    logger.debug("Connexion à l'API reddit")
     reddit = redditconnect("bot")
 
     # lowest timestamp of extracted data
@@ -59,8 +67,6 @@ def main(args):
         before = int(STARTTIME) - 600000
 
     if args.file is not None:
-        logger.debug("Argument 'file' détecté")
-        logger.debug("Chargement df_orig")
         if args.import_format == "xlsx":
             df_orig = pd.read_excel(args.file)
         else:
@@ -97,9 +103,7 @@ def main(args):
                 post_ids.append(submission["id"])
             logger.debug("timestamp = " + str(data[-1]["created_utc"]))
             # Calls getPushshiftData() with the created date of the last submission
-            data = getPushshiftData(
-                before, data[-1]["created_utc"], args.subreddit
-            )
+            data = getPushshiftData(before, data[-1]["created_utc"], args.subreddit)
         logger.debug("Extracting Pushshift data DONE.")
 
         data = post_ids
@@ -110,9 +114,7 @@ def main(args):
             data = json.load(f)
 
     # Filename without extension
-    filename_without_ext = "posts_{}_{}".format(
-        str(args.subreddit), str(int(before))
-    )
+    filename_without_ext = "posts_{}_{}".format(str(args.subreddit), str(int(before)))
 
     # ID export
     export(data, export_folder, filename_without_ext, export_type="json")
@@ -127,9 +129,7 @@ def main(args):
         df = df_orig.append(df)
 
     # Posts export
-    export(
-        df, export_folder, filename_without_ext, export_type=args.export_format
-    )
+    export(df, export_folder, filename_without_ext, export_type=args.export_format)
 
     runtime = time.time() - STARTTIME
     print("Runtime : %.2f seconds" % runtime)
@@ -257,9 +257,7 @@ def parse_args():
         help="The subreddit to download posts from. Default : /r/france",
         default="france",
     )
-    parser.add_argument(
-        "-a", "--after", type=str, help="The min unixstamp to download"
-    )
+    parser.add_argument("-a", "--after", type=str, help="The min unixstamp to download")
     parser.add_argument(
         "-b", "--before", type=str, help="The max unixstamp to download"
     )
