@@ -25,8 +25,7 @@ def main(args):
         logger.error("Use -u to set the username")
         exit()
 
-    for i in username:
-        logger.info("Fetching posts for user %s", i)
+    for i in tqdm(username):
         try:
             df = fetch_posts(i)
             df["Date"] = pd.to_datetime(df["Date"], unit="s")
@@ -42,64 +41,28 @@ def main(args):
             else:
                 df.to_csv(f"{filename}.csv", index=False, sep="\t")
         except Exception as e:
-            logger.error(
-                "Does that user have made any post ? Complete error : %s", e
-            )
+            logger.error("Does that user have made any post ? Complete error : %s", e)
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
 
 def fetch_posts(username):
-    posts = []
-
-    columns = [
-        "ID",
-        "Title",
-        "Date",
-        "Score",
-        "Ratio",
-        "Comments",
-        "Flair",
-        "Domain",
-        "Text",
-        "URL",
-        "Permalink",
-        "Author",
-        "Author CSS Flair",
-        "Author Text Flair",
-        "Gilded",
-        "Can Gild",
-        "Hidden",
-        "Archived",
-        "Can Crosspost",
-    ]
-
     reddit = redditconnect("bot")
+    posts = []
     user = reddit.redditor(username)
-
     for index, submission in enumerate(user.submissions.new(limit=None), 1):
-        logger.debug("\rFetching post %s for user {username}…", index)
-        posts.append(submission)
-
-    logger.debug("Fetching posts DONE.")
-
-    logger.debug("Creating pandas dataframe...")
-
-    d = []
-
-    for submission in tqdm(posts, dynamic_ncols=True):
-        d.append(
+        posts.append(
             {
-                "Score": submission.score,
-                "Author": str(submission.author),
-                "Author CSS Flair": str(submission.author_flair_css_class),
-                "Author Text Flair": str(submission.author_flair_text),
-                "Ratio": submission.upvote_ratio,
                 "ID": submission.name,
-                "Permalink": f"https://reddit.com{submission.permalink}",
                 "Title": submission.title,
                 "URL": submission.url,
                 "Comments": submission.num_comments,
+                "Score": submission.score,
+                "Ratio": submission.upvote_ratio,
+                "Author": str(submission.author),
+                "Author CSS Flair": str(submission.author_flair_css_class),
+                "Author Text Flair": str(submission.author_flair_text),
+                "Permalink": f"https://reddit.com{submission.permalink}",
                 "Date": submission.created_utc,
                 "Flair": str(submission.link_flair_text),
                 "Text": str(submission.selftext),
@@ -109,15 +72,10 @@ def fetch_posts(username):
                 "Archived": submission.archived,
                 "Can Gild": submission.can_gild,
                 "Can Crosspost": submission.is_crosspostable,
+                "Subreddit": submission.subreddit.display_name,
             }
         )
-
-    df = pd.DataFrame(d)
-
-    df = df[columns]
-
-    logger.debug("Creating pandas dataframe DONE.")
-
+    df = pd.DataFrame(posts)
     return df
 
 

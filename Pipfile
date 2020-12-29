@@ -13,6 +13,7 @@ requests = "*"
 pandas = "*"
 numpy = "*"
 xlrd = "*"
+psaw = "*"
 
 [requires]
 python_version = "3.8"
