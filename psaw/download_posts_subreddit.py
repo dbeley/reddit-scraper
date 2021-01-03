@@ -110,25 +110,26 @@ def main(args):
         logger.error("Use -s to set the subreddit")
         exit()
 
-    try:
-        df = fetch_posts(api, args.subreddit)
-        df["date_utc"] = pd.to_datetime(df["created_utc"], unit="s")
-        df["date"] = pd.to_datetime(df["created"], unit="s")
-        df["permalink"] = "https://old.reddit.com" + df["permalink"].astype(str)
-        df = df[df.columns.intersection(COLUMNS)]
-        filename = f"{folder}/posts_{args.subreddit}_{int(time.time())}"
-        if args.export_format == "xlsx":
-            writer = pd.ExcelWriter(
-                f"{filename}.xlsx",
-                engine="xlsxwriter",
-                options={"strings_to_urls": False},
-            )
-            df.to_excel(writer, sheet_name="Sheet1")
-            writer.save()
-        else:
-            df.to_csv(f"{filename}.csv", index=False, sep="\t")
-    except Exception as e:
-        logger.error("Complete error : %s", e)
+    for i in subreddit:
+        try:
+            df = fetch_posts(api, i)
+            df["date_utc"] = pd.to_datetime(df["created_utc"], unit="s")
+            df["date"] = pd.to_datetime(df["created"], unit="s")
+            df["permalink"] = "https://old.reddit.com" + df["permalink"].astype(str)
+            df = df[df.columns.intersection(COLUMNS)]
+            filename = f"{folder}/posts_{i}_{int(time.time())}"
+            if args.export_format == "xlsx":
+                writer = pd.ExcelWriter(
+                    f"{filename}.xlsx",
+                    engine="xlsxwriter",
+                    options={"strings_to_urls": False},
+                )
+                df.to_excel(writer, sheet_name="Sheet1")
+                writer.save()
+            else:
+                df.to_csv(f"{filename}.csv", index=False, sep="\t")
+        except Exception as e:
+            logger.error("Complete error : %s", e)
 
     logger.info("Runtime : %.2f seconds" % (time.time() - temps_debut))
 
