@@ -115,7 +115,9 @@ def main(args):
     filename = f"{folder}/comments_{int(time.time())}_{args.search_terms}"
     if args.export_format == "xlsx":
         writer = pd.ExcelWriter(
-            f"{filename}.xlsx", engine="xlsxwriter", options={"strings_to_urls": False},
+            f"{filename}.xlsx",
+            engine="xlsxwriter",
+            options={"strings_to_urls": False},
         )
         df.to_excel(writer, sheet_name="Sheet1")
         writer.save()

@@ -153,7 +153,11 @@ def parse_args():
         default=logging.INFO,
     )
     parser.add_argument(
-        "-s", "--subreddit", type=str, help="Subreddit", required=True,
+        "-s",
+        "--subreddit",
+        type=str,
+        help="Subreddit",
+        required=True,
     )
     parser.add_argument(
         "--export_format",
