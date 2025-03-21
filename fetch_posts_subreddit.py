@@ -126,7 +126,7 @@ def main(args):
     # Create the complete dataframe if df_orig exists
     if df_orig is not None:
         df_orig = df_orig[~df_orig["ID"].isin(df["ID"])]
-        df = df_orig.append(df)
+        df = pd.concat([df_orig, df])
 
     # Posts export
     export(df, export_folder, filename_without_ext, export_type=args.export_format)
@@ -165,30 +165,33 @@ def fetch_posts(data, reddit):
     for x in tqdm(data, dynamic_ncols=True):
         try:
             submission = reddit.submission(id=str(x))
-            df.append(
-                {
-                    "Score": submission.score,
-                    "Author": str(submission.author),
-                    "Author CSS Flair": str(submission.author_flair_css_class),
-                    "Author Text Flair": str(submission.author_flair_text),
-                    "Ratio": submission.upvote_ratio,
-                    "ID": submission.name,
-                    "Permalink": f"https://reddit.com{submission.permalink}",
-                    "Title": submission.title,
-                    "URL": submission.url,
-                    "Comments": submission.num_comments,
-                    "Date": submission.created_utc,
-                    "Flair": str(submission.link_flair_text),
-                    "Text": str(submission.selftext)
-                    .replace("\r", "\n")
-                    .replace("\t", " "),
-                    "Domain": submission.domain,
-                    "Gilded": submission.gilded,
-                    "Hidden": submission.hidden,
-                    "Archived": submission.archived,
-                    "Can Gild": submission.can_gild,
-                    "Can Crosspost": submission.is_crosspostable,
-                }
+            pd.concat(
+                [
+                    df,
+                    {
+                        "Score": submission.score,
+                        "Author": str(submission.author),
+                        "Author CSS Flair": str(submission.author_flair_css_class),
+                        "Author Text Flair": str(submission.author_flair_text),
+                        "Ratio": submission.upvote_ratio,
+                        "ID": submission.name,
+                        "Permalink": f"https://reddit.com{submission.permalink}",
+                        "Title": submission.title,
+                        "URL": submission.url,
+                        "Comments": submission.num_comments,
+                        "Date": submission.created_utc,
+                        "Flair": str(submission.link_flair_text),
+                        "Text": str(submission.selftext)
+                        .replace("\r", "\n")
+                        .replace("\t", " "),
+                        "Domain": submission.domain,
+                        "Gilded": submission.gilded,
+                        "Hidden": submission.hidden,
+                        "Archived": submission.archived,
+                        "Can Gild": submission.can_gild,
+                        "Can Crosspost": submission.is_crosspostable,
+                    },
+                ]
             )
         except Exception as e:
             print("Error : " + str(e))

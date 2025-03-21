@@ -34,17 +34,17 @@ def main(args):
             data = json.load(f)
         for post_id in tqdm(data, dynamic_ncols=True):
             logger.info("Extracting comments for id %s", post_id)
-            df = df.append(fetch_comments(reddit, post_id=post_id))
+            df = pd.concat([df, fetch_comments(reddit, post_id=post_id)])
     elif args.id is not None:
         ids = [x.strip() for x in args.id.split(",")]
         for post_id in tqdm(ids, dynamic_ncols=True):
             logger.info("Extracting comments for id %s", post_id)
-            df = df.append(fetch_comments(reddit, post_id=post_id))
+            df = pd.concat([df, fetch_comments(reddit, post_id=post_id)])
     elif args.urls is not None:
         urls = [x.strip() for x in args.urls.split(",")]
         for url in tqdm(urls, dynamic_ncols=True):
             logger.info("Extracting comments for url %s", url)
-            df = df.append(fetch_comments(reddit, url=url))
+            df = pd.concat([df, fetch_comments(reddit, url=url)])
     else:
         logger.error("Error in arguments. Use --source,-i/--id or -u/--url")
         exit()
@@ -53,7 +53,7 @@ def main(args):
 
     if args.file is not None:
         df_orig = df_orig[~df_orig["ID"].isin(df["ID"])]
-        df = df_orig.append(df)
+        df = pd.concat([df_orig, df])
 
     Path(folder).mkdir(parents=True, exist_ok=True)
 
